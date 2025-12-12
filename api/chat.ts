@@ -23,12 +23,20 @@ const normalizeHistory = (history: unknown): HistoryMessage[] => {
   if (!Array.isArray(history)) return [];
   return history
     .filter((h) => h && typeof h === 'object')
-    .map((h: any) => ({
+    .map((h: any): HistoryMessage => ({
       role: h.role === 'assistant' ? 'assistant' : 'user',
       content: String(h.content ?? ''),
     }))
     .filter((h) => h.content.length > 0)
     .slice(-6);
+};
+
+const resolveChatUrl = (baseUrl: string): string => {
+  const trimmed = baseUrl.replace(/\/+$/, '');
+  if (trimmed.endsWith('/v1/chat/completions')) return trimmed;
+  if (trimmed.endsWith('/v1/chat')) return `${trimmed}/completions`;
+  if (trimmed.endsWith('/v1')) return `${trimmed}/chat/completions`;
+  return `${trimmed}/v1/chat/completions`;
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -67,7 +75,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     { role: 'user', content: message },
   ];
 
-  const url = `${LLM_BASE_URL.replace(/\\/$/, '')}/v1/chat/completions`;
+  const url = resolveChatUrl(LLM_BASE_URL);
 
   try {
     const llmRes = await fetch(url, {
@@ -101,4 +109,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(500).json({ text: '档案馆暂时无法回应，请稍后再试。' });
   }
 }
-

@@ -1,6 +1,4 @@
 📜 项目代号：Project Dogami (Her Universe)
-> 注意：PRD 的权威版本已迁至 `spec/PRD.md`。本文件保留为入口/兼容，请优先在 `spec/PRD.md` 更新与引用。
-
 产品需求文档 (PRD) v1.3
 
 1. 项目愿景 (Project Vision)

@@ -1,17 +1,17 @@
 # Project Status: Project Dogami (Her Universe)
 
-**Current Phase**: Visual Enhancement & Map Refactor
+**Current Phase**: Map Interaction & Champions Filtering
 **Last Updated**: 2025-12-12
-**Current Instruction**: `spec/002-visual-enhancement-final.md`
+**Current Instruction**: `spec/003-map-interaction-final.md`
 
 ## 🚀 Active Task
-- **Task**: Implement High-Fidelity Interactive Map (Arcane Fantasy Theme)
+- **Task**: Map → Sidebar → Champions interaction (Module A)
 - **Owner**: Execution Agent
 - **Status**: **Pending Execution**
 - **Context**: 
-    - Fixing "missing map" bug.
-    - Implementing `react-zoom-pan-pinch`.
-    - Applying "Arcane/Nature/Tech" mixed visual style.
+    - Pins select location and open Sidebar.
+    - Sidebar CTA scrolls to Champions and filters by location.
+    - Travel updates current location and champions filter.
 
 ## 📋 Backlog
 1.  [ ] **Module A**: Connect Pins to Drawer.

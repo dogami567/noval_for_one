@@ -11,7 +11,6 @@ interface InteractiveMapProps {
   currentLocationId: string;
   onSelectLocation: (location: Location) => void;
   onClearSelection: () => void;
-  onViewDetails: (location: Location) => void;
 }
 
 const InteractiveMap: React.FC<InteractiveMapProps> = ({
@@ -20,7 +19,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   currentLocationId,
   onSelectLocation,
   onClearSelection,
-  onViewDetails,
 }) => {
   return (
     <div className="relative h-full w-full overflow-hidden rounded-3xl border border-white/5 shadow-[0_30px_80px_rgba(0,0,0,0.55)] bg-slate-950">
@@ -93,7 +91,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                       isSelected={selectedLocationId === loc.id}
                       isCurrent={currentLocationId === loc.id}
                       onClick={onSelectLocation}
-                      onViewDetails={(location) => onViewDetails(location)}
                     />
                   ))}
                 </div>

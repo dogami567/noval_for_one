@@ -9,9 +9,10 @@ interface SidebarProps {
   onClose: () => void;
   onUpdate: (location: Location) => void;
   onTravel: () => void;
+  onViewChampions: (location: Location) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose, onUpdate, onTravel }) => {
+const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose, onUpdate, onTravel, onViewChampions }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<Location>>({});
 
@@ -166,6 +167,13 @@ const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose,
 
           {/* Footer Action */}
           <div className="p-6 border-t border-slate-800 bg-black/40 backdrop-blur-sm z-20">
+            <button
+              type="button"
+              onClick={() => onViewChampions(location)}
+              className="group w-full mb-3 py-3 px-6 font-semibold rounded-lg uppercase tracking-[0.18em] text-xs flex items-center justify-center gap-3 bg-slate-800/70 hover:bg-slate-700 text-white border border-white/10 hover:border-white/20 transition-all"
+            >
+              View Champions Here
+            </button>
             <button 
               onClick={onTravel}
               disabled={!canTravel}

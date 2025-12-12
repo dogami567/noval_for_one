@@ -9,10 +9,9 @@ interface MapMarkerProps {
   isSelected: boolean;
   isCurrent: boolean;
   onClick: (location: Location) => void;
-  onViewDetails?: (location: Location) => void;
 }
 
-const MapMarker: React.FC<MapMarkerProps> = ({ location, isSelected, isCurrent, onClick, onViewDetails }) => {
+const MapMarker: React.FC<MapMarkerProps> = ({ location, isSelected, isCurrent, onClick }) => {
   const isLocked = location.status === 'locked';
 
   // Determine icon based on type and status
@@ -33,7 +32,6 @@ const MapMarker: React.FC<MapMarkerProps> = ({ location, isSelected, isCurrent, 
       bg: 'bg-slate-900/80 border-cyan-500',
       pulse: 'border-purple-400',
       glow: 'bg-purple-500/30',
-      label: 'text-cyan-300',
       accentBorder: 'border-cyan-500/30',
     },
     nature: {
@@ -41,7 +39,6 @@ const MapMarker: React.FC<MapMarkerProps> = ({ location, isSelected, isCurrent, 
       bg: 'bg-emerald-900/70 border-emerald-500',
       pulse: 'border-emerald-400',
       glow: 'bg-emerald-500/30',
-      label: 'text-emerald-300',
       accentBorder: 'border-emerald-500/30',
     },
     city: {
@@ -49,7 +46,6 @@ const MapMarker: React.FC<MapMarkerProps> = ({ location, isSelected, isCurrent, 
       bg: 'bg-amber-900/70 border-amber-500',
       pulse: 'border-amber-400',
       glow: 'bg-amber-500/30',
-      label: 'text-amber-300',
       accentBorder: 'border-amber-500/30',
     },
     ruin: {
@@ -57,7 +53,6 @@ const MapMarker: React.FC<MapMarkerProps> = ({ location, isSelected, isCurrent, 
       bg: 'bg-rose-900/70 border-rose-500',
       pulse: 'border-rose-400',
       glow: 'bg-rose-500/30',
-      label: 'text-rose-300',
       accentBorder: 'border-rose-500/30',
     },
   } as const;
@@ -68,7 +63,6 @@ const MapMarker: React.FC<MapMarkerProps> = ({ location, isSelected, isCurrent, 
   let bgColor = palette.bg;
   let pulseColor = palette.pulse;
   let glowColor = palette.glow;
-  let labelColor = palette.label;
   let accentBorder = palette.accentBorder;
 
   if (isLocked) {
@@ -76,24 +70,12 @@ const MapMarker: React.FC<MapMarkerProps> = ({ location, isSelected, isCurrent, 
     bgColor = 'bg-slate-800/90 border-slate-600';
     pulseColor = 'border-slate-600';
     glowColor = 'bg-slate-500/10';
-    labelColor = 'text-slate-400';
     accentBorder = 'border-slate-700';
   } else if (isSelected && !isCurrent) {
     mainColor = 'text-white';
     bgColor = twMerge(bgColor, 'border-white');
     pulseColor = 'border-white/80';
   }
-
-  const buttonColorByType = {
-    mystic: 'bg-cyan-500 text-black hover:bg-cyan-400',
-    nature: 'bg-emerald-500 text-black hover:bg-emerald-400',
-    city: 'bg-amber-500 text-black hover:bg-amber-400',
-    ruin: 'bg-rose-500 text-black hover:bg-rose-400',
-  } as const;
-
-  const buttonColor = isLocked
-    ? 'bg-slate-700 text-slate-300 cursor-not-allowed'
-    : buttonColorByType[location.type] ?? buttonColorByType.mystic;
 
   return (
     <div 
@@ -155,62 +137,27 @@ const MapMarker: React.FC<MapMarkerProps> = ({ location, isSelected, isCurrent, 
         </motion.div>
 
         {/* HOVER LABEL / YOU ARE HERE LABEL */}
-        {isSelected ? (
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 w-56 pointer-events-auto z-30">
-            <div className={twMerge('rounded-xl border bg-slate-950/95 px-4 py-3 shadow-2xl backdrop-blur', accentBorder)}>
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="fantasy-font text-sm text-white">{location.name}</span>
-                <span className={twMerge('text-[10px] uppercase tracking-[0.25em]', labelColor)}>
-                  {location.type}
-                </span>
-              </div>
-              <p className="text-xs text-slate-300 leading-5 mb-3">{location.description}</p>
-              <div className="flex items-center justify-between">
-                {isCurrent ? (
-                  <span className="text-[10px] uppercase tracking-[0.25em] text-amber-400">You are here</span>
-                ) : (
-                  <span className="text-[10px] uppercase tracking-[0.25em] text-slate-400">Selected</span>
-                )}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onViewDetails?.(location);
-                  }}
-                  className={twMerge(
-                    'rounded-full px-3 py-1 text-xs font-semibold transition-colors',
-                    buttonColor
-                  )}
-                  disabled={isLocked}
-                >
-                  View Details
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : (
+        <div
+          className={twMerge(
+            'absolute top-16 left-1/2 -translate-x-1/2 whitespace-nowrap z-30 flex flex-col items-center gap-1 transition-opacity duration-300 pointer-events-none',
+            isCurrent || isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+          )}
+        >
+          {isCurrent && (
+            <span className="text-[10px] font-bold text-amber-400 tracking-widest uppercase animate-pulse">
+              Current Location
+            </span>
+          )}
           <div
             className={twMerge(
-              'absolute top-16 left-1/2 -translate-x-1/2 whitespace-nowrap z-30 flex flex-col items-center gap-1 transition-opacity duration-300 pointer-events-none',
-              isCurrent ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              'px-3 py-1.5 rounded border backdrop-blur-md shadow-xl text-xs fantasy-font tracking-wide',
+              isLocked ? 'bg-slate-900/90 text-slate-400 border-slate-700' : 'bg-black/90 text-white',
+              !isLocked ? accentBorder : ''
             )}
           >
-            {isCurrent && (
-              <span className="text-[10px] font-bold text-amber-400 tracking-widest uppercase animate-pulse">
-                Current Location
-              </span>
-            )}
-            <div
-              className={twMerge(
-                'px-3 py-1.5 rounded border backdrop-blur-md shadow-xl text-xs fantasy-font tracking-wide',
-                isLocked ? 'bg-slate-900/90 text-slate-400 border-slate-700' : 'bg-black/90 text-white',
-                !isLocked ? accentBorder : ''
-              )}
-            >
-              {location.name} {isLocked && '(Locked)'}
-            </div>
+            {location.name} {isLocked && '(Locked)'}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

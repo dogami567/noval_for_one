@@ -61,7 +61,8 @@ export const CHARACTERS: Character[] = [
     stories: [
         { title: 'The First Step', excerpt: 'How Mel abandoned her family name to serve the Spire.' },
         { title: 'Echoes of Silence', excerpt: 'A confrontation with the silence of the Void.' }
-    ]
+    ],
+    currentLocationId: 'loc_1',
   },
   {
     id: 'char_2',
@@ -73,7 +74,8 @@ export const CHARACTERS: Character[] = [
     lore: 'Flesh is weak, but steel is eternal. Viktor saw the frailty of his people during the Plague of Rust and vowed to ascend them. Now, half-machine and fully driven, he leads the Bastion into a new age of mechanical evolution.',
     stories: [
         { title: 'Glorious Evolution', excerpt: 'The day the forges ran cold, and Viktor reignited them with his own spark.' }
-    ]
+    ],
+    currentLocationId: 'loc_2',
   },
   {
     id: 'char_3',
@@ -86,7 +88,8 @@ export const CHARACTERS: Character[] = [
     stories: [
         { title: 'Blood and Iron', excerpt: 'A lesson taught to her children on the battlefield.' },
         { title: 'The Wolfs Bargain', excerpt: 'A secret pact made in the depths of winter.' }
-    ]
+    ],
+    currentLocationId: 'loc_4',
   },
   {
     id: 'char_4',
@@ -98,7 +101,8 @@ export const CHARACTERS: Character[] = [
     lore: 'Do not let his size deceive you. Teemo traverses the poisonous jungles of Kumungu with a smile. He is the guardian of the hidden pathways, and his darts never miss.',
     stories: [
         { title: 'The Mushroom War', excerpt: 'How one scout held back an entire battalion.' }
-    ]
+    ],
+    currentLocationId: 'loc_3',
   },
   {
     id: 'char_5',
@@ -108,7 +112,8 @@ export const CHARACTERS: Character[] = [
     description: 'She dances between the realms of the living and the spirit world.',
     imageUrl: 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Aurora_0.jpg',
     lore: 'Aurora sees the world not as it is, but as it could be. The spirits guide her steps, allowing her to traverse great distances in the blink of an eye. She seeks to heal the rift between the material and the ethereal.',
-    stories: []
+    stories: [],
+    currentLocationId: 'loc_1',
   }
 ];
 

@@ -28,6 +28,8 @@ export interface Character {
   imageUrl: string;
   lore: string; // Extended biography
   stories: { title: string; excerpt: string }[]; // New field for "stories"
+  currentLocationId: string; // Drives map/champions filtering (V1)
+  homeLocationId?: string; // Optional narrative hook (V2+)
 }
 
 export interface ChronicleEntry {

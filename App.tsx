@@ -18,6 +18,7 @@ function App() {
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [currentLocationId, setCurrentLocationId] = useState<string>('loc_1');
+  const [activeLocationId, setActiveLocationId] = useState<string | null>('loc_1');
   const [isTraveling, setIsTraveling] = useState(false);
 
   const topRef = useRef<HTMLDivElement>(null);
@@ -57,20 +58,30 @@ function App() {
 
   const handleTravel = () => {
     if (selectedLocation && selectedLocation.status !== 'locked') {
+      const destinationId = selectedLocation.id;
       setSelectedLocation(null);
       setIsTraveling(true);
       setTimeout(() => {
         setIsTraveling(false);
-        setCurrentLocationId(selectedLocation.id);
+        setCurrentLocationId(destinationId);
+        setActiveLocationId(destinationId);
       }, 2500);
     }
   };
 
-  const handleViewDetails = (location: Location) => {
-    setSelectedLocation(location);
+  const handleViewChampionsForLocation = (location: Location) => {
+    setActiveLocationId(location.id);
     setCurrentView('characters');
     characterSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  const activeLocation = activeLocationId
+    ? locations.find((loc) => loc.id === activeLocationId) ?? null
+    : null;
+
+  const filteredCharacters = activeLocationId
+    ? characters.filter((c) => c.currentLocationId === activeLocationId)
+    : characters;
 
   return (
     <div className="relative w-full min-h-screen bg-slate-950 text-slate-100 selection:bg-cyan-500/30 font-sans">
@@ -85,7 +96,6 @@ function App() {
           currentLocationId={currentLocationId}
           onSelectLocation={handleLocationClick}
           onClearSelection={() => setSelectedLocation(null)}
-          onViewDetails={handleViewDetails}
         />
 
         {/* Scroll Indicator */}
@@ -108,7 +118,13 @@ function App() {
         <div className="w-full h-16 -mt-10 bg-gradient-to-b from-transparent to-slate-950 pointer-events-none"></div>
 
         <section ref={characterSectionRef} className="relative px-4 pt-12 pb-24 sm:px-10">
-          <CharacterGridSection characters={characters} onSelectCharacter={setSelectedCharacter} />
+          <CharacterGridSection
+            characters={filteredCharacters}
+            activeLocationId={activeLocationId}
+            activeLocationName={activeLocation?.name ?? null}
+            onClearFilter={() => setActiveLocationId(null)}
+            onSelectCharacter={setSelectedCharacter}
+          />
         </section>
 
         <section
@@ -137,6 +153,7 @@ function App() {
         onClose={() => setSelectedLocation(null)}
         onUpdate={handleUpdateLocation}
         onTravel={handleTravel}
+        onViewChampions={handleViewChampionsForLocation}
       />
 
       <CharacterSidebar

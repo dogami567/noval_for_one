@@ -1,23 +1,23 @@
 # Project Status: Project Dogami (Her Universe)
 
-**Current Phase**: Infrastructure & Fix
-**Last Updated**: 2025-12-11
-**Current Instruction**: `修改意见/001-setup-and-map.md`
+**Current Phase**: Visual Enhancement & Map Refactor
+**Last Updated**: 2025-12-12
+**Current Instruction**: `修改意见/002-visual-enhancement.md`
 
 ## 🚀 Active Task
-- **Task**: Fix Missing Map & Implement Interactive Zoom
+- **Task**: Implement High-Fidelity Interactive Map (Arcane Fantasy Theme)
 - **Owner**: Execution Agent
 - **Status**: **Pending Execution**
 - **Context**: 
-    - Deployment has a "black screen" bug due to missing map assets/css.
-    - We are replacing the old `MapBackground` with a robust `InteractiveMap` (PRD v1.3).
+    - Fixing "missing map" bug.
+    - Implementing `react-zoom-pan-pinch`.
+    - Applying "Arcane/Nature/Tech" mixed visual style.
 
 ## 📋 Backlog
-1.  [ ] **Supabase Config**: Generate SQL schema and setup environment variables.
-2.  [ ] **Module A (The Atlas)**: Connect Map Pins to Drawer.
-3.  [ ] **Module B (The Wiki)**: Build Character Card components.
-4.  [ ] **Module D (The Tavern)**: Implement RP interface.
+1.  [ ] **Module A**: Connect Pins to Drawer.
+2.  [ ] **Module B**: Wiki Cards.
+3.  [ ] **Module D**: Tavern Interface.
 
 ## 🧠 Architecture Notes
-- **Stack**: Vite + React + Vercel Functions.
-- **Critical**: Use fallback colors for map background to prevent "black screen of death".
+- **Theme**: Arcane Fantasy (Magic + Nature + Tech).
+- **UX**: Organic animations, distinct color coding per faction.

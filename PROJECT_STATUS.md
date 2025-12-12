@@ -2,7 +2,7 @@
 
 **Current Phase**: Visual Enhancement & Map Refactor
 **Last Updated**: 2025-12-12
-**Current Instruction**: `修改意见/002-visual-enhancement.md`
+**Current Instruction**: `spec/002-visual-enhancement-final.md`
 
 ## 🚀 Active Task
 - **Task**: Implement High-Fidelity Interactive Map (Arcane Fantasy Theme)

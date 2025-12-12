@@ -1,12 +1,19 @@
-> 已归档。本任务的唯一执行规格已迁至：`spec/002-visual-enhancement-final.md`。
+# Frontend Architecture Spec: High-Fidelity Map Experience (Final)
 
-# Frontend Architecture Spec: High-Fidelity Map Experience
-
-**ID**: 002-visual-enhancement
-**Theme**: **Arcane Fantasy / Aetherpunk** (Hybrid of Magic, Nature, and Tech)
+**ID**: 002-visual-enhancement  
+**Status**: FINAL  
+**Date**: 2025-12-12  
+**Owner**: Frontend / Immersion Architect  
 **Target**: Execution Agent
 
-## 🎨 Visual Language & Design Goals
+本任务 spec 继承并遵循全局基线：`spec/000-system-architecture-final.md`。  
+本文件为 002 的**唯一执行规格**。
+
+---
+
+**Theme**: **Arcane Fantasy / Aetherpunk** (Hybrid of Magic, Nature, and Tech)
+
+## ✅ Visual Language & Design Goals
 The world is diverse: it has ancient forests (Elves), majestic capitals (Queens), and steampunk cities (Tech). The UI should reflect this "Hybrid" nature, not just pure industrial Hextech.
 
 1.  **The "Vignette" Effect**: The edges of the screen should fade into deep shadow (`slate-950`), creating a focus on the center.
@@ -46,7 +53,7 @@ The world is diverse: it has ancient forests (Elves), majestic capitals (Queens)
 *   **Parallax Hook**: The Map is the "Hero".
 *   **Scroll Indicator**: A "Ghostly" arrow pointing down, indicating "There is more below".
 
-## 🚀 Execution Checklist
+## ✅ Execution Checklist
 1.  **Install**: `npm install react-zoom-pan-pinch clsx tailwind-merge framer-motion`
 2.  **Implement**: `components/InteractiveMap.tsx`.
 3.  **Refactor**: `components/MapMarker.tsx` to support the **Color Variants** defined above.
@@ -55,3 +62,4 @@ The world is diverse: it has ancient forests (Elves), majestic capitals (Queens)
 ## 💡 Architect's Tip
 *   **Diversity is Key**: Don't make everything blue. Let the Emerald forest pop against the dark map. Let the Gold city shine.
 *   **Subtlety**: The animations should be slow and calm (duration 3s+), not frantic blinking.
+

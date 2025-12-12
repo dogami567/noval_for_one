@@ -12,6 +12,7 @@ interface CharacterSidebarProps {
 const CharacterSidebar: React.FC<CharacterSidebarProps> = ({ character, onClose, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<Character>>({});
+  const isAdminMode = import.meta.env.VITE_ADMIN_MODE === 'true';
 
   useEffect(() => {
     setIsEditing(false);
@@ -21,6 +22,7 @@ const CharacterSidebar: React.FC<CharacterSidebarProps> = ({ character, onClose,
   }, [character]);
 
   const handleSave = () => {
+    if (!isAdminMode) return;
     if (character && formData) {
       onUpdate({ ...character, ...formData } as Character);
       setIsEditing(false);
@@ -53,7 +55,7 @@ const CharacterSidebar: React.FC<CharacterSidebarProps> = ({ character, onClose,
               <X size={20} />
             </button>
 
-            {!isEditing && (
+            {!isEditing && isAdminMode && (
               <button 
                 onClick={() => setIsEditing(true)}
                 className="absolute top-4 right-4 p-2 bg-amber-600/90 hover:bg-amber-500 rounded-full text-white shadow-lg border border-amber-400/50 transition-all hover:scale-105 z-20"
@@ -63,7 +65,7 @@ const CharacterSidebar: React.FC<CharacterSidebarProps> = ({ character, onClose,
             )}
 
             <div className="absolute bottom-0 left-0 w-full p-8 z-20">
-               {isEditing ? (
+               {isAdminMode && isEditing ? (
                   <div className="space-y-2">
                      <input 
                         className="bg-black/50 border border-amber-500/50 text-3xl font-bold text-white w-full px-2 py-1 rounded fantasy-font"
@@ -108,7 +110,7 @@ const CharacterSidebar: React.FC<CharacterSidebarProps> = ({ character, onClose,
                    <h3 className="text-lg font-serif">Biography</h3>
                 </div>
                 
-                {isEditing ? (
+                {isAdminMode && isEditing ? (
                    <textarea 
                       className="w-full h-40 bg-slate-900 border border-slate-700 rounded p-4 text-slate-300 leading-relaxed focus:border-amber-500 outline-none"
                       value={formData.lore}
@@ -142,7 +144,7 @@ const CharacterSidebar: React.FC<CharacterSidebarProps> = ({ character, onClose,
              </div>
 
              {/* Edit Actions */}
-             {isEditing && (
+             {isAdminMode && isEditing && (
                 <div className="sticky bottom-0 pt-4 bg-slate-950 border-t border-slate-800 flex gap-2">
                    <button onClick={handleSave} className="flex-1 bg-green-700 hover:bg-green-600 text-white py-3 rounded font-bold flex items-center justify-center gap-2 transition-colors">
                       <Save size={18} /> Save Changes

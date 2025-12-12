@@ -31,6 +31,9 @@ export interface Character {
   currentLocationId: string; // Drives map/champions filtering (V1)
   homeLocationId?: string; // Optional narrative hook (V2+)
   discoveryStage: 'hidden' | 'rumor' | 'revealed'; // Character discovery state (V1)
+  bio?: string;
+  rpPrompt?: string;
+  attributes?: Record<string, unknown>;
 }
 
 export interface ChronicleEntry {

@@ -1,13 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Save, Clock, CheckCircle, Circle } from 'lucide-react';
-import { CHRONICLES } from '../constants';
 import { ChronicleEntry } from '../types';
 
-const ChroniclesView: React.FC = () => {
-  const [entries, setEntries] = useState<ChronicleEntry[]>(CHRONICLES);
+interface ChroniclesViewProps {
+  entries: ChronicleEntry[];
+  isLoading?: boolean;
+}
+
+const ChroniclesView: React.FC<ChroniclesViewProps> = ({ entries, isLoading = false }) => {
+  const isAdminMode = import.meta.env.VITE_ADMIN_MODE === 'true';
+  const [localEntries, setLocalEntries] = useState<ChronicleEntry[]>(entries);
   const [isAdding, setIsAdding] = useState(false);
   const [newEntry, setNewEntry] = useState<Partial<ChronicleEntry>>({ title: '', summary: '', date: 'Era 4, Year 205' });
+
+  useEffect(() => {
+    setLocalEntries(entries);
+  }, [entries]);
 
   const handleAddEntry = () => {
     if (newEntry.title && newEntry.summary) {
@@ -18,7 +27,7 @@ const ChroniclesView: React.FC = () => {
         date: newEntry.date || 'Unknown Date',
         status: 'active'
       };
-      setEntries([entry, ...entries]);
+      setLocalEntries([entry, ...localEntries]);
       setIsAdding(false);
       setNewEntry({ title: '', summary: '', date: 'Era 4, Year 205' });
     }
@@ -45,18 +54,20 @@ const ChroniclesView: React.FC = () => {
               <h2 className="text-4xl text-amber-400 font-bold fantasy-font drop-shadow-lg">The Living Chronicle</h2>
               <p className="text-slate-400 italic mt-2">The tapestry of fate, woven by your choices.</p>
            </div>
-           <button 
-             onClick={() => setIsAdding(!isAdding)}
-             className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-lg shadow-lg transition-all active:scale-95"
-           >
-             <Plus size={18} />
-             <span className="font-semibold">Add Plot Event</span>
-           </button>
+           {isAdminMode && (
+             <button 
+               onClick={() => setIsAdding(!isAdding)}
+               className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-lg shadow-lg transition-all active:scale-95"
+             >
+               <Plus size={18} />
+               <span className="font-semibold">Add Plot Event</span>
+             </button>
+           )}
         </div>
 
         {/* New Entry Form */}
         <AnimatePresence>
-          {isAdding && (
+          {isAdminMode && isAdding && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
@@ -99,7 +110,10 @@ const ChroniclesView: React.FC = () => {
 
         {/* Timeline */}
         <div className="relative border-l-2 border-slate-700 ml-4 space-y-8 pl-8">
-          {entries.map((entry, index) => (
+          {isLoading && localEntries.length === 0 && (
+            <div className="text-slate-500 text-sm italic">Loading chronicles...</div>
+          )}
+          {localEntries.map((entry, index) => (
             <motion.div
               key={entry.id}
               initial={{ opacity: 0, x: -20 }}

@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 
-const API_KEY = process.env.API_KEY || '';
+const API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY || '';
 
 // Initialize generically, but we will create a fresh instance per call if needed to handle key rotation or ensuring env var is picked up.
 // For this demo, we assume the environment variable is set.

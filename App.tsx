@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Github, Twitter } from 'lucide-react';
 import Sidebar from './components/Sidebar';
@@ -8,18 +8,70 @@ import CharacterGridSection from './components/CharacterGridSection';
 import CharacterSidebar from './components/CharacterSidebar';
 import ChroniclesView from './components/ChroniclesView';
 import InteractiveMap from './components/InteractiveMap';
-import { LOCATIONS, CHARACTERS } from './constants';
-import { Location, ViewType, Character } from './types';
+import { LOCATIONS, CHARACTERS, CHRONICLES } from './constants';
+import { Location, ViewType, Character, ChronicleEntry } from './types';
+import { listLocations } from './services/locationService';
+import { listCharacters } from './services/characterService';
+import { listTimelineEvents } from './services/chronicleService';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('map');
   const [locations, setLocations] = useState<Location[]>(LOCATIONS);
   const [characters, setCharacters] = useState<Character[]>(CHARACTERS);
+  const [chronicleEntries, setChronicleEntries] = useState<ChronicleEntry[]>(CHRONICLES);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [currentLocationId, setCurrentLocationId] = useState<string>('loc_1');
   const [activeLocationId, setActiveLocationId] = useState<string | null>('loc_1');
   const [isTraveling, setIsTraveling] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadFromSupabase = async () => {
+      try {
+        const [dbLocations, dbCharacters, dbChronicles] = await Promise.all([
+          listLocations(),
+          listCharacters(),
+          listTimelineEvents(),
+        ]);
+
+        if (cancelled) return;
+
+        const nextLocations = dbLocations.length > 0 ? dbLocations : LOCATIONS;
+        const nextCharacters = dbCharacters.length > 0 ? dbCharacters : CHARACTERS;
+        const nextChronicles = dbChronicles.length > 0 ? dbChronicles : CHRONICLES;
+
+        setLocations(nextLocations);
+        setCharacters(nextCharacters);
+        setChronicleEntries(nextChronicles);
+
+        const firstUnlockedId =
+          nextLocations.find((loc) => loc.status !== 'locked')?.id ?? nextLocations[0]?.id;
+        if (firstUnlockedId) {
+          setCurrentLocationId(firstUnlockedId);
+          setActiveLocationId(firstUnlockedId);
+        }
+      } catch (error) {
+        console.warn('[supabase] Failed to load, falling back to constants', error);
+        if (cancelled) return;
+        setLocations(LOCATIONS);
+        setCharacters(CHARACTERS);
+        setChronicleEntries(CHRONICLES);
+        const fallbackId = LOCATIONS[0]?.id ?? 'loc_1';
+        setCurrentLocationId(fallbackId);
+        setActiveLocationId(fallbackId);
+      } finally {
+        if (!cancelled) setIsLoadingData(false);
+      }
+    };
+
+    loadFromSupabase();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const topRef = useRef<HTMLDivElement>(null);
   const characterSectionRef = useRef<HTMLDivElement>(null);
@@ -138,7 +190,7 @@ function App() {
           className="relative bg-slate-900/50 border-t border-slate-800 px-4 sm:px-10"
         >
           <div className="py-24">
-            <ChroniclesView />
+            <ChroniclesView entries={chronicleEntries} isLoading={isLoadingData} />
           </div>
         </section>
 

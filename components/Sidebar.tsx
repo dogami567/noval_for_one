@@ -15,6 +15,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose, onUpdate, onTravel, onViewChampions }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<Location>>({});
+  const isAdminMode = import.meta.env.VITE_ADMIN_MODE === 'true';
 
   // Reset editing state when location changes
   useEffect(() => {
@@ -25,6 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose,
   }, [location]);
 
   const handleSave = () => {
+    if (!isAdminMode) return;
     if (location && formData) {
       onUpdate({ ...location, ...formData } as Location);
       setIsEditing(false);
@@ -32,6 +34,7 @@ const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose,
   };
 
   const handleCancel = () => {
+    if (!isAdminMode) return;
     setIsEditing(false);
     if (location) {
       setFormData(location);
@@ -75,7 +78,7 @@ const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose,
               <X size={20} />
             </button>
 
-            {!isEditing && (
+            {!isEditing && isAdminMode && (
               <button 
                 onClick={() => setIsEditing(true)}
                 className="absolute bottom-4 right-4 p-2 bg-amber-600/90 hover:bg-amber-500 rounded-full text-white shadow-lg border border-amber-400/50 transition-all hover:scale-105"
@@ -103,7 +106,7 @@ const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose,
                  )}
               </div>
 
-              {isEditing ? (
+              {isAdminMode && isEditing ? (
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <div>
                     <label className="block text-slate-400 text-xs uppercase tracking-wider mb-1">Name</label>

@@ -1,17 +1,17 @@
 # Project Status: Project Dogami (Her Universe)
 
-**Current Phase**: Map Interaction & Champions Filtering
+**Current Phase**: Locked Visibility & Discovery (World Progression)
 **Last Updated**: 2025-12-12
-**Current Instruction**: `spec/003-map-interaction-final.md`
+**Current Instruction**: `spec/004-locked-visibility-final.md`
 
 ## 🚀 Active Task
-- **Task**: Map → Sidebar → Champions interaction (Module A)
+- **Task**: Locked locations gating + character discovery stages
 - **Owner**: Execution Agent
 - **Status**: **Pending Execution**
 - **Context**: 
-    - Pins select location and open Sidebar.
-    - Sidebar CTA scrolls to Champions and filters by location.
-    - Travel updates current location and champions filter.
+    - Filtering to locked locations must show no champions.
+    - Add discoveryStage (hidden/rumor/revealed) and global list rules.
+    - Prepare event schema for V2 narrative-driven world state.
 
 ## 📋 Backlog
 1.  [ ] **Module A**: Connect Pins to Drawer.

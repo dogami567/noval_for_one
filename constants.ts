@@ -63,6 +63,7 @@ export const CHARACTERS: Character[] = [
         { title: 'Echoes of Silence', excerpt: 'A confrontation with the silence of the Void.' }
     ],
     currentLocationId: 'loc_1',
+    discoveryStage: 'revealed',
   },
   {
     id: 'char_2',
@@ -76,6 +77,7 @@ export const CHARACTERS: Character[] = [
         { title: 'Glorious Evolution', excerpt: 'The day the forges ran cold, and Viktor reignited them with his own spark.' }
     ],
     currentLocationId: 'loc_2',
+    discoveryStage: 'revealed',
   },
   {
     id: 'char_3',
@@ -90,6 +92,7 @@ export const CHARACTERS: Character[] = [
         { title: 'The Wolfs Bargain', excerpt: 'A secret pact made in the depths of winter.' }
     ],
     currentLocationId: 'loc_4',
+    discoveryStage: 'rumor',
   },
   {
     id: 'char_4',
@@ -103,6 +106,7 @@ export const CHARACTERS: Character[] = [
         { title: 'The Mushroom War', excerpt: 'How one scout held back an entire battalion.' }
     ],
     currentLocationId: 'loc_3',
+    discoveryStage: 'rumor',
   },
   {
     id: 'char_5',
@@ -114,6 +118,7 @@ export const CHARACTERS: Character[] = [
     lore: 'Aurora sees the world not as it is, but as it could be. The spirits guide her steps, allowing her to traverse great distances in the blink of an eye. She seeks to heal the rift between the material and the ethereal.',
     stories: [],
     currentLocationId: 'loc_1',
+    discoveryStage: 'revealed',
   }
 ];
 

@@ -30,6 +30,7 @@ export interface Character {
   stories: { title: string; excerpt: string }[]; // New field for "stories"
   currentLocationId: string; // Drives map/champions filtering (V1)
   homeLocationId?: string; // Optional narrative hook (V2+)
+  discoveryStage: 'hidden' | 'rumor' | 'revealed'; // Character discovery state (V1)
 }
 
 export interface ChronicleEntry {

@@ -79,9 +79,14 @@ function App() {
     ? locations.find((loc) => loc.id === activeLocationId) ?? null
     : null;
 
-  const filteredCharacters = activeLocationId
-    ? characters.filter((c) => c.currentLocationId === activeLocationId)
-    : characters;
+  const isActiveLocationLocked = activeLocation?.status === 'locked';
+
+  const filteredCharacters =
+    activeLocationId && !isActiveLocationLocked
+      ? characters.filter((c) => c.currentLocationId === activeLocationId)
+      : activeLocationId
+        ? []
+        : characters.filter((c) => c.discoveryStage !== 'hidden');
 
   return (
     <div className="relative w-full min-h-screen bg-slate-950 text-slate-100 selection:bg-cyan-500/30 font-sans">
@@ -122,6 +127,7 @@ function App() {
             characters={filteredCharacters}
             activeLocationId={activeLocationId}
             activeLocationName={activeLocation?.name ?? null}
+            isActiveLocationLocked={isActiveLocationLocked}
             onClearFilter={() => setActiveLocationId(null)}
             onSelectCharacter={setSelectedCharacter}
           />

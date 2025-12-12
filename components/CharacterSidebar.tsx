@@ -99,7 +99,7 @@ const CharacterSidebar: React.FC<CharacterSidebarProps> = ({ character, onClose,
                 <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
                 <div className="flex items-center gap-2">
                    <User size={14} className="text-slate-500" />
-                   <span>Champion</span>
+                   <span>英雄</span>
                 </div>
              </div>
 
@@ -107,7 +107,7 @@ const CharacterSidebar: React.FC<CharacterSidebarProps> = ({ character, onClose,
              <div className="space-y-4">
                 <div className="flex items-center gap-2 text-white border-b border-slate-800 pb-2">
                    <BookOpen size={18} className="text-amber-500" />
-                   <h3 className="text-lg font-serif">Biography</h3>
+                   <h3 className="text-lg font-serif">传记</h3>
                 </div>
                 
                 {isAdminMode && isEditing ? (
@@ -127,7 +127,7 @@ const CharacterSidebar: React.FC<CharacterSidebarProps> = ({ character, onClose,
              <div className="space-y-4">
                 <div className="flex items-center gap-2 text-white border-b border-slate-800 pb-2">
                    <BookOpen size={18} className="text-cyan-500" />
-                   <h3 className="text-lg font-serif">Related Tales</h3>
+                   <h3 className="text-lg font-serif">相关故事</h3>
                 </div>
                 
                 <div className="grid gap-4">
@@ -138,7 +138,7 @@ const CharacterSidebar: React.FC<CharacterSidebarProps> = ({ character, onClose,
                       </div>
                    ))}
                    {(!character.stories || character.stories.length === 0) && (
-                      <div className="text-slate-600 italic text-sm">No stories recorded yet.</div>
+                      <div className="text-slate-600 italic text-sm">暂无记录的故事。</div>
                    )}
                 </div>
              </div>
@@ -147,10 +147,10 @@ const CharacterSidebar: React.FC<CharacterSidebarProps> = ({ character, onClose,
              {isAdminMode && isEditing && (
                 <div className="sticky bottom-0 pt-4 bg-slate-950 border-t border-slate-800 flex gap-2">
                    <button onClick={handleSave} className="flex-1 bg-green-700 hover:bg-green-600 text-white py-3 rounded font-bold flex items-center justify-center gap-2 transition-colors">
-                      <Save size={18} /> Save Changes
+                      <Save size={18} /> 保存修改
                    </button>
                    <button onClick={() => setIsEditing(false)} className="px-6 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded font-bold transition-colors">
-                      Cancel
+                      取消
                    </button>
                 </div>
              )}

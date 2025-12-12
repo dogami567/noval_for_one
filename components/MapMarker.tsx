@@ -144,9 +144,7 @@ const MapMarker: React.FC<MapMarkerProps> = ({ location, isSelected, isCurrent, 
           )}
         >
           {isCurrent && (
-            <span className="text-[10px] font-bold text-amber-400 tracking-widest uppercase animate-pulse">
-              Current Location
-            </span>
+            <span className="text-[10px] font-bold text-amber-400 tracking-widest uppercase animate-pulse">当前位置</span>
           )}
           <div
             className={twMerge(
@@ -155,7 +153,7 @@ const MapMarker: React.FC<MapMarkerProps> = ({ location, isSelected, isCurrent, 
               !isLocked ? accentBorder : ''
             )}
           >
-            {location.name} {isLocked && '(Locked)'}
+            {location.name} {isLocked && '（锁定）'}
           </div>
         </div>
       </div>

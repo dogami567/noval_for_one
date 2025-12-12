@@ -40,24 +40,24 @@ const CharacterGridSection: React.FC<CharacterGridSectionProps> = ({
              initial={{ opacity: 0, scale: 0.9 }}
              whileInView={{ opacity: 1, scale: 1 }}
              viewport={{ once: true }}
-             className="text-5xl text-amber-100 font-bold fantasy-font mb-4 tracking-wider"
+           className="text-5xl text-amber-100 font-bold fantasy-font mb-4 tracking-wider"
            >
-             The Champions
+             英雄群像
            </motion.h2>
-           <p className="text-slate-500 uppercase tracking-[0.3em] text-sm">Legends of Aetheria</p>
+           <p className="text-slate-500 tracking-[0.3em] text-sm">艾瑟瑞亚的传说</p>
         </div>
 
         {/* Filter Bar */}
         <div className="mb-10 flex items-center justify-between gap-4 rounded-full bg-slate-900/60 backdrop-blur-xl border border-white/10 px-6 py-3 shadow-2xl">
           {activeLocationId ? (
             <div className="text-sm text-slate-200">
-              Showing champions at{' '}
+              当前地点：{' '}
               <span className="text-amber-300 fantasy-font">
-                {activeLocationName ?? 'Unknown Location'}
+                {activeLocationName ?? '未知地点'}
               </span>
             </div>
           ) : (
-            <div className="text-sm text-slate-200">All Champions</div>
+            <div className="text-sm text-slate-200">全部英雄</div>
           )}
           {activeLocationId && (
             <button
@@ -65,7 +65,7 @@ const CharacterGridSection: React.FC<CharacterGridSectionProps> = ({
               onClick={onClearFilter}
               className="rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-widest bg-black/40 hover:bg-black/70 border border-white/10 hover:border-white/20 text-white transition-all"
             >
-              Show All
+              显示全部
             </button>
           )}
         </div>
@@ -74,8 +74,8 @@ const CharacterGridSection: React.FC<CharacterGridSectionProps> = ({
           <div className="rounded-2xl border border-white/10 bg-slate-900/50 backdrop-blur px-8 py-16 text-center shadow-xl">
             <p className="text-slate-300 text-sm tracking-wide">
               {showLockedEmpty
-                ? 'The region is sealed. No champions are known to dwell here.'
-                : 'No champions are currently here.'}
+                ? '该地区已被封锁，暂无已知英雄在此栖居。'
+                : '目前这里没有英雄。'}
             </p>
             {activeLocationId && (
               <button
@@ -83,7 +83,7 @@ const CharacterGridSection: React.FC<CharacterGridSectionProps> = ({
                 onClick={onClearFilter}
                 className="mt-6 inline-flex items-center justify-center rounded-full px-5 py-2 text-xs font-semibold uppercase tracking-widest bg-black/50 hover:bg-black/80 border border-white/10 hover:border-white/20 text-white transition-all"
               >
-                Show All
+                显示全部
               </button>
             )}
           </div>
@@ -115,9 +115,7 @@ const CharacterGridSection: React.FC<CharacterGridSectionProps> = ({
                       <h3 className="text-xl text-slate-200 font-bold fantasy-font tracking-wide mb-2">
                         ???
                       </h3>
-                      <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-4">
-                        Rumor
-                      </p>
+                      <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-4">传闻</p>
                       <p className="text-slate-400 text-xs leading-relaxed line-clamp-3">
                         {char.description}
                       </p>
@@ -176,7 +174,7 @@ const CharacterGridSection: React.FC<CharacterGridSectionProps> = ({
                         {char.description}
                       </p>
                       <span className="inline-block mt-3 text-amber-500 text-xs border-b border-amber-500/50 pb-0.5">
-                        Read Lore
+                        阅读传记
                       </span>
                     </div>
                   </div>

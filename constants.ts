@@ -47,7 +47,7 @@ export const LOCATIONS: Location[] = [
   },
 ];
 
-export const INITIAL_WELCOME_MESSAGE = "Greetings, traveler. I am the Keeper of Chronicles. What knowledge of this realm do you seek today?";
+export const INITIAL_WELCOME_MESSAGE = "旅人，欢迎来到编年史的殿堂。我是编年史守护者，你想了解这片大陆的什么？";
 
 export const CHARACTERS: Character[] = [
   {

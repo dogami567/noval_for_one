@@ -82,7 +82,7 @@ const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose,
               <button 
                 onClick={() => setIsEditing(true)}
                 className="absolute bottom-4 right-4 p-2 bg-amber-600/90 hover:bg-amber-500 rounded-full text-white shadow-lg border border-amber-400/50 transition-all hover:scale-105"
-                title="Edit Details"
+                title="编辑详情"
               >
                 <Edit2 size={16} />
               </button>
@@ -97,11 +97,11 @@ const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose,
               <div className="flex justify-between items-center mb-3">
                  <span className="text-amber-500 text-xs font-bold uppercase tracking-[0.25em] flex items-center gap-2">
                     <Compass size={12} />
-                    {location.type} location
+                    {location.type} 地点
                  </span>
                  {isLocked && (
                     <span className="text-slate-400 text-xs uppercase tracking-widest flex items-center gap-1 bg-slate-800 px-2 py-1 rounded">
-                       <Lock size={12} /> Locked
+                       <Lock size={12} /> 锁定
                     </span>
                  )}
               </div>
@@ -109,7 +109,7 @@ const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose,
               {isAdminMode && isEditing ? (
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <div>
-                    <label className="block text-slate-400 text-xs uppercase tracking-wider mb-1">Name</label>
+                    <label className="block text-slate-400 text-xs uppercase tracking-wider mb-1">名称</label>
                     <input 
                       type="text" 
                       value={formData.name || ''}
@@ -118,7 +118,7 @@ const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose,
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-400 text-xs uppercase tracking-wider mb-1">Brief Description</label>
+                    <label className="block text-slate-400 text-xs uppercase tracking-wider mb-1">简短描述</label>
                     <textarea 
                       value={formData.description || ''}
                       onChange={(e) => setFormData({...formData, description: e.target.value})}
@@ -127,7 +127,7 @@ const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose,
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-400 text-xs uppercase tracking-wider mb-1">Lore</label>
+                    <label className="block text-slate-400 text-xs uppercase tracking-wider mb-1">传说</label>
                     <textarea 
                       value={formData.lore || ''}
                       onChange={(e) => setFormData({...formData, lore: e.target.value})}
@@ -137,10 +137,10 @@ const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose,
                   </div>
                   <div className="flex gap-2 pt-2">
                      <button onClick={handleSave} className="flex-1 flex items-center justify-center gap-2 py-2 bg-green-700 hover:bg-green-600 text-white rounded text-sm font-semibold transition-colors">
-                       <Save size={16} /> Save Changes
+                       <Save size={16} /> 保存修改
                      </button>
                      <button onClick={handleCancel} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded text-sm transition-colors">
-                       Cancel
+                       取消
                      </button>
                   </div>
                 </div>
@@ -157,10 +157,12 @@ const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose,
                   <div className="space-y-4 pt-6">
                     <div className="flex items-center gap-2 text-cyan-400 border-b border-slate-800 pb-2">
                       <ScrollText size={18} />
-                      <span className="text-sm font-semibold uppercase tracking-widest">Archivist Notes</span>
+                      <span className="text-sm font-semibold uppercase tracking-widest">档案官笔记</span>
                     </div>
                     <p className="text-slate-400 text-sm leading-7 font-sans text-justify">
-                      {isLocked ? "The records for this location are sealed or lost to time. Visit nearby locations to uncover clues." : location.lore}
+                      {isLocked
+                        ? '此处的记录已被封存或湮没于时光。请探索附近地点以寻找线索。'
+                        : location.lore}
                     </p>
                   </div>
                 </>
@@ -175,7 +177,7 @@ const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose,
               onClick={() => onViewChampions(location)}
               className="group w-full mb-3 py-3 px-6 font-semibold rounded-lg uppercase tracking-[0.18em] text-xs flex items-center justify-center gap-3 bg-slate-800/70 hover:bg-slate-700 text-white border border-white/10 hover:border-white/20 transition-all"
             >
-              View Champions Here
+              查看此处英雄
             </button>
             <button 
               onClick={onTravel}
@@ -189,7 +191,7 @@ const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose,
             >
               {isLocked ? <Lock size={18} /> : <Map size={18} className="group-hover:rotate-12 transition-transform" />}
               <span>
-                {isLocked ? 'Location Locked' : isCurrentLocation ? 'You Are Here' : 'Travel to Location'}
+                {isLocked ? '地点已锁定' : isCurrentLocation ? '你在此处' : '前往该地点'}
               </span>
             </button>
           </div>

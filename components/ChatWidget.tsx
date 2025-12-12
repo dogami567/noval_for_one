@@ -82,7 +82,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ selectedLocation }) => {
                 <div className="p-1.5 bg-cyan-500/20 rounded-lg">
                    <Bot size={18} className="text-cyan-400" />
                 </div>
-                <span className="font-semibold text-slate-100 fantasy-font">Chronicle Keeper</span>
+                <span className="font-semibold text-slate-100 fantasy-font">编年史守护者</span>
               </div>
               <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-white transition-colors">
                 <X size={18} />
@@ -126,7 +126,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ selectedLocation }) => {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Ask about the history..."
+                  placeholder="询问这片大陆的历史…"
                   className="w-full bg-slate-800/50 text-white text-sm rounded-xl pl-4 pr-10 py-3 focus:outline-none focus:ring-1 focus:ring-cyan-500 border border-transparent placeholder-slate-500"
                 />
                 <button 

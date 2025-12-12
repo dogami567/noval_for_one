@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { Minus, Plus, RotateCcw } from 'lucide-react';
@@ -20,15 +20,47 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   onSelectLocation,
   onClearSelection,
 }) => {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [coverScale, setCoverScale] = useState(1);
+
+  useEffect(() => {
+    const MAP_WIDTH = 1920;
+    const MAP_HEIGHT = 1080;
+    const element = wrapperRef.current;
+    if (!element) return;
+
+    const computeCoverScale = (width: number, height: number) => {
+      const scale = Math.max(width / MAP_WIDTH, height / MAP_HEIGHT);
+      setCoverScale(scale || 1);
+    };
+
+    computeCoverScale(element.clientWidth, element.clientHeight);
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const { width, height } = entry.contentRect;
+      computeCoverScale(width, height);
+    });
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-3xl border border-white/5 shadow-[0_30px_80px_rgba(0,0,0,0.55)] bg-slate-950">
+    <div
+      ref={wrapperRef}
+      className="relative h-full w-full overflow-hidden rounded-3xl border border-white/5 shadow-[0_30px_80px_rgba(0,0,0,0.55)] bg-slate-950"
+    >
       <TransformWrapper
         centerOnInit
-        minScale={0.5}
+        centerZoomedOut={false}
+        minScale={coverScale}
         maxScale={4}
-        initialScale={1}
+        initialScale={coverScale}
         doubleClick={{ disabled: true }}
         limitToBounds
+        alignmentAnimation={{ disabled: true }}
         wheel={{ step: 0.2, activationKeys: ['Control'] }}
         panning={{ velocityDisabled: true }}
       >
@@ -44,7 +76,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
               >
                 <img
                   src="https://pub-83c5db439b40468498f97946200806f7.r2.dev/hackline/map-v1.jpg"
-                  alt="Realm map"
+                  alt="大陆地图"
                   className="absolute inset-0 h-full w-full object-cover"
                 />
 
@@ -103,7 +135,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 type="button"
                 onClick={() => zoomOut()}
                 className="p-1 rounded-full hover:bg-white/5 transition-colors"
-                aria-label="Zoom out"
+                aria-label="缩小"
               >
                 <Minus size={18} />
               </button>
@@ -111,7 +143,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 type="button"
                 onClick={() => resetTransform()}
                 className="p-1 rounded-full hover:bg-white/5 transition-colors"
-                aria-label="Reset view"
+                aria-label="重置视图"
               >
                 <RotateCcw size={18} />
               </button>
@@ -119,7 +151,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 type="button"
                 onClick={() => zoomIn()}
                 className="p-1 rounded-full hover:bg-white/5 transition-colors"
-                aria-label="Zoom in"
+                aria-label="放大"
               >
                 <Plus size={18} />
               </button>

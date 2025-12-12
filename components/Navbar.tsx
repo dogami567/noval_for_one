@@ -9,9 +9,9 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
   const navItems: { label: string; icon: React.ReactNode; id: ViewType }[] = [
-    { label: 'Map', icon: <Globe size={18} />, id: 'map' },
-    { label: 'Champions', icon: <Users size={18} />, id: 'characters' },
-    { label: 'Chronicles', icon: <BookOpen size={18} />, id: 'chronicles' },
+    { label: '地图', icon: <Globe size={18} />, id: 'map' },
+    { label: '英雄', icon: <Users size={18} />, id: 'characters' },
+    { label: '编年史', icon: <BookOpen size={18} />, id: 'chronicles' },
   ];
 
   return (

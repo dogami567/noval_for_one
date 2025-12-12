@@ -39,9 +39,12 @@ function App() {
 
         if (cancelled) return;
 
-        const nextLocations = dbLocations.length > 0 ? dbLocations : LOCATIONS;
-        const nextCharacters = dbCharacters.length > 0 ? dbCharacters : CHARACTERS;
-        const nextChronicles = dbChronicles.length > 0 ? dbChronicles : CHRONICLES;
+        const hasDbData =
+          dbLocations.length > 0 && dbCharacters.length > 0 && dbChronicles.length > 0;
+
+        const nextLocations = hasDbData ? dbLocations : LOCATIONS;
+        const nextCharacters = hasDbData ? dbCharacters : CHARACTERS;
+        const nextChronicles = hasDbData ? dbChronicles : CHRONICLES;
 
         setLocations(nextLocations);
         setCharacters(nextCharacters);
@@ -162,8 +165,8 @@ function App() {
             animate={{ y: [0, 10, 0] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            <span className="text-xs uppercase tracking-[0.2em] font-semibold text-cyan-400 drop-shadow-md">
-              Scroll to Explore
+            <span className="text-xs tracking-[0.2em] font-semibold text-cyan-400 drop-shadow-md">
+              向下滚动探索
             </span>
             <ChevronDown size={32} className="text-white drop-shadow-md" />
           </motion.div>
@@ -195,12 +198,12 @@ function App() {
         </section>
 
         <footer className="w-full bg-black py-12 border-t border-slate-900 text-center">
-          <h3 className="fantasy-font text-2xl text-slate-600 mb-4">Aetheria Chronicles</h3>
+          <h3 className="fantasy-font text-2xl text-slate-600 mb-4">艾瑟瑞亚编年史</h3>
           <div className="flex justify-center gap-6 text-slate-500 mb-8">
             <Github className="hover:text-white cursor-pointer transition-colors" />
             <Twitter className="hover:text-white cursor-pointer transition-colors" />
           </div>
-          <p className="text-slate-700 text-sm">? 2024 Realm Archives. All rights reserved.</p>
+          <p className="text-slate-700 text-sm">© 2024 大陆档案馆。保留所有权利。</p>
         </footer>
       </main>
 
@@ -234,7 +237,7 @@ function App() {
                 transition={{ duration: 1.5, repeat: Infinity }}
                 className="text-amber-400 text-5xl font-bold fantasy-font mb-8"
               >
-                Traversing the Realm...
+                正在穿越大陆…
               </motion.div>
               <div className="mb-8 relative w-24 h-24 border-4 border-slate-700 rounded-full flex items-center justify-center">
                 <motion.div

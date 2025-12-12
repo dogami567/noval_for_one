@@ -12,7 +12,7 @@ const ChroniclesView: React.FC<ChroniclesViewProps> = ({ entries, isLoading = fa
   const isAdminMode = import.meta.env.VITE_ADMIN_MODE === 'true';
   const [localEntries, setLocalEntries] = useState<ChronicleEntry[]>(entries);
   const [isAdding, setIsAdding] = useState(false);
-  const [newEntry, setNewEntry] = useState<Partial<ChronicleEntry>>({ title: '', summary: '', date: 'Era 4, Year 205' });
+  const [newEntry, setNewEntry] = useState<Partial<ChronicleEntry>>({ title: '', summary: '', date: '纪元4，205年' });
 
   useEffect(() => {
     setLocalEntries(entries);
@@ -29,7 +29,7 @@ const ChroniclesView: React.FC<ChroniclesViewProps> = ({ entries, isLoading = fa
       };
       setLocalEntries([entry, ...localEntries]);
       setIsAdding(false);
-      setNewEntry({ title: '', summary: '', date: 'Era 4, Year 205' });
+      setNewEntry({ title: '', summary: '', date: '纪元4，205年' });
     }
   };
 
@@ -38,6 +38,15 @@ const ChroniclesView: React.FC<ChroniclesViewProps> = ({ entries, isLoading = fa
       case 'completed': return <CheckCircle size={16} className="text-green-500" />;
       case 'active': return <Clock size={16} className="text-amber-500" />;
       default: return <Circle size={16} className="text-slate-500" />;
+    }
+  };
+
+  const getStatusLabel = (status: ChronicleEntry['status']) => {
+    switch (status) {
+      case 'completed': return '已完成';
+      case 'active': return '进行中';
+      case 'pending': return '未开始';
+      default: return status;
     }
   };
 
@@ -51,8 +60,8 @@ const ChroniclesView: React.FC<ChroniclesViewProps> = ({ entries, isLoading = fa
       >
         <div className="flex justify-between items-center mb-12">
            <div>
-              <h2 className="text-4xl text-amber-400 font-bold fantasy-font drop-shadow-lg">The Living Chronicle</h2>
-              <p className="text-slate-400 italic mt-2">The tapestry of fate, woven by your choices.</p>
+              <h2 className="text-4xl text-amber-400 font-bold fantasy-font drop-shadow-lg">鲜活编年史</h2>
+              <p className="text-slate-400 italic mt-2">命运的织锦，由你的选择编织。</p>
            </div>
            {isAdminMode && (
              <button 
@@ -60,7 +69,7 @@ const ChroniclesView: React.FC<ChroniclesViewProps> = ({ entries, isLoading = fa
                className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-lg shadow-lg transition-all active:scale-95"
              >
                <Plus size={18} />
-               <span className="font-semibold">Add Plot Event</span>
+               <span className="font-semibold">添加剧情事件</span>
              </button>
            )}
         </div>
@@ -74,33 +83,33 @@ const ChroniclesView: React.FC<ChroniclesViewProps> = ({ entries, isLoading = fa
               exit={{ height: 0, opacity: 0 }}
               className="bg-slate-900/80 border border-amber-500/30 rounded-lg p-6 mb-8 overflow-hidden"
             >
-              <h3 className="text-lg text-amber-200 mb-4 font-serif">Inscribe New History</h3>
+              <h3 className="text-lg text-amber-200 mb-4 font-serif">书写新的历史</h3>
               <div className="space-y-4">
                 <input 
                   type="text" 
-                  placeholder="Event Title"
+                  placeholder="事件标题"
                   value={newEntry.title}
                   onChange={e => setNewEntry({...newEntry, title: e.target.value})}
                   className="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white focus:border-amber-500 outline-none"
                 />
                 <input 
                   type="text" 
-                  placeholder="Date / Era"
+                  placeholder="日期 / 纪元"
                   value={newEntry.date}
                   onChange={e => setNewEntry({...newEntry, date: e.target.value})}
                   className="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white focus:border-amber-500 outline-none"
                 />
                 <textarea 
-                  placeholder="Description of the event..."
+                  placeholder="事件描述..."
                   value={newEntry.summary}
                   onChange={e => setNewEntry({...newEntry, summary: e.target.value})}
                   rows={3}
                   className="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white focus:border-amber-500 outline-none"
                 />
                 <div className="flex justify-end gap-2">
-                  <button onClick={() => setIsAdding(false)} className="px-4 py-2 text-slate-400 hover:text-white">Cancel</button>
+                  <button onClick={() => setIsAdding(false)} className="px-4 py-2 text-slate-400 hover:text-white">取消</button>
                   <button onClick={handleAddEntry} className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded flex items-center gap-2">
-                    <Save size={16} /> Save Record
+                    <Save size={16} /> 保存记录
                   </button>
                 </div>
               </div>
@@ -111,7 +120,7 @@ const ChroniclesView: React.FC<ChroniclesViewProps> = ({ entries, isLoading = fa
         {/* Timeline */}
         <div className="relative border-l-2 border-slate-700 ml-4 space-y-8 pl-8">
           {isLoading && localEntries.length === 0 && (
-            <div className="text-slate-500 text-sm italic">Loading chronicles...</div>
+            <div className="text-slate-500 text-sm italic">正在加载编年史...</div>
           )}
           {localEntries.map((entry, index) => (
             <motion.div
@@ -134,7 +143,7 @@ const ChroniclesView: React.FC<ChroniclesViewProps> = ({ entries, isLoading = fa
                 </div>
                 <div className="flex items-center gap-1 bg-black/30 px-2 py-1 rounded text-xs text-slate-300 border border-white/5">
                    {getStatusIcon(entry.status)}
-                   <span className="uppercase">{entry.status}</span>
+                   <span>{getStatusLabel(entry.status)}</span>
                 </div>
               </div>
               

@@ -1,7 +1,7 @@
 type AdminRow = Record<string, unknown>;
 
 export interface AdminUploadPayload {
-  entity: 'location' | 'character';
+  entity: 'location' | 'character' | 'place' | 'story';
   id: string;
   filename: string;
   contentType: string;
@@ -47,6 +47,22 @@ export const adminDeleteLocation = (id: string) =>
     method: 'DELETE',
   });
 
+export const adminListPlaces = () => adminFetch<AdminRow[]>('/api/admin/places');
+export const adminCreatePlace = (payload: AdminRow) =>
+  adminFetch<AdminRow>('/api/admin/places', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+export const adminUpdatePlace = (id: string, payload: AdminRow) =>
+  adminFetch<AdminRow>(`/api/admin/places?id=${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+export const adminDeletePlace = (id: string) =>
+  adminFetch<AdminRow | null>(`/api/admin/places?id=${id}`, {
+    method: 'DELETE',
+  });
+
 export const adminListCharacters = () => adminFetch<AdminRow[]>('/api/admin/characters');
 export const adminCreateCharacter = (payload: AdminRow) =>
   adminFetch<AdminRow>('/api/admin/characters', {
@@ -77,6 +93,26 @@ export const adminUpdateTimelineEvent = (id: string, payload: AdminRow) =>
   });
 export const adminDeleteTimelineEvent = (id: string) =>
   adminFetch<AdminRow | null>(`/api/admin/timeline-events?id=${id}`, {
+    method: 'DELETE',
+  });
+
+export const adminListStories = () => adminFetch<AdminRow[]>('/api/admin/stories');
+export const adminGetStoryDetail = (id: string) =>
+  adminFetch<{ story: AdminRow | null; character_ids: string[]; place_ids: string[] }>(
+    `/api/admin/stories?id=${id}`
+  );
+export const adminCreateStory = (payload: AdminRow) =>
+  adminFetch<AdminRow>('/api/admin/stories', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+export const adminUpdateStory = (id: string, payload: AdminRow) =>
+  adminFetch<AdminRow>(`/api/admin/stories?id=${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+export const adminDeleteStory = (id: string) =>
+  adminFetch<AdminRow | null>(`/api/admin/stories?id=${id}`, {
     method: 'DELETE',
   });
 

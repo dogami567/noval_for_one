@@ -2,13 +2,13 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Castle, Mountain, Trees, Lock, Navigation } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
-import { Location } from '../types';
+import { Place } from '../types';
 
 interface MapMarkerProps {
-  location: Location;
+  location: Place;
   isSelected: boolean;
   isCurrent: boolean;
-  onClick: (location: Location) => void;
+  onClick: (location: Place) => void;
 }
 
 const MapMarker: React.FC<MapMarkerProps> = ({ location, isSelected, isCurrent, onClick }) => {
@@ -17,30 +17,20 @@ const MapMarker: React.FC<MapMarkerProps> = ({ location, isSelected, isCurrent, 
   // Determine icon based on type and status
   const getIcon = () => {
     if (isLocked) return <Lock size={16} />;
-    switch (location.type) {
-      case 'city': return <Castle size={20} />;
-      case 'nature': return <Trees size={20} />;
-      case 'ruin': return <Mountain size={20} />;
-      case 'mystic': return <MapPin size={20} />;
-      default: return <MapPin size={20} />;
+    switch (location.kind) {
+      case 'city':
+        return <Castle size={20} />;
+      case 'country':
+        return <Trees size={20} />;
+      case 'continent':
+        return <Mountain size={20} />;
+      case 'poi':
+      default:
+        return <MapPin size={20} />;
     }
   };
 
   const typePalette = {
-    mystic: {
-      main: 'text-cyan-200',
-      bg: 'bg-slate-900/80 border-cyan-500',
-      pulse: 'border-purple-400',
-      glow: 'bg-purple-500/30',
-      accentBorder: 'border-cyan-500/30',
-    },
-    nature: {
-      main: 'text-emerald-200',
-      bg: 'bg-emerald-900/70 border-emerald-500',
-      pulse: 'border-emerald-400',
-      glow: 'bg-emerald-500/30',
-      accentBorder: 'border-emerald-500/30',
-    },
     city: {
       main: 'text-amber-200',
       bg: 'bg-amber-900/70 border-amber-500',
@@ -48,16 +38,30 @@ const MapMarker: React.FC<MapMarkerProps> = ({ location, isSelected, isCurrent, 
       glow: 'bg-amber-500/30',
       accentBorder: 'border-amber-500/30',
     },
-    ruin: {
+    poi: {
+      main: 'text-cyan-200',
+      bg: 'bg-slate-900/80 border-cyan-500',
+      pulse: 'border-cyan-400',
+      glow: 'bg-cyan-500/25',
+      accentBorder: 'border-cyan-500/30',
+    },
+    country: {
+      main: 'text-emerald-200',
+      bg: 'bg-emerald-900/70 border-emerald-500',
+      pulse: 'border-emerald-400',
+      glow: 'bg-emerald-500/25',
+      accentBorder: 'border-emerald-500/30',
+    },
+    continent: {
       main: 'text-rose-200',
       bg: 'bg-rose-900/70 border-rose-500',
       pulse: 'border-rose-400',
-      glow: 'bg-rose-500/30',
+      glow: 'bg-rose-500/25',
       accentBorder: 'border-rose-500/30',
     },
   } as const;
 
-  const palette = typePalette[location.type] ?? typePalette.mystic;
+  const palette = typePalette[location.kind] ?? typePalette.poi;
 
   let mainColor = palette.main;
   let bgColor = palette.bg;
@@ -80,7 +84,7 @@ const MapMarker: React.FC<MapMarkerProps> = ({ location, isSelected, isCurrent, 
   return (
     <div 
       className="absolute z-10 cursor-pointer group"
-      style={{ left: `${location.x}%`, top: `${location.y}%` }}
+      style={{ left: `${location.mapX ?? 0}%`, top: `${location.mapY ?? 0}%` }}
       onClick={(e) => {
         e.stopPropagation();
         onClick(location);

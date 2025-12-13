@@ -1,8 +1,23 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { createClient } from '@supabase/supabase-js';
 
 const LLM_BASE_URL = process.env.LLM_BASE_URL;
 const LLM_API_KEY = process.env.LLM_API_KEY;
 const LLM_MODEL = process.env.LLM_MODEL;
+
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const supabaseAdmin =
+  SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
+      })
+    : null;
 
 type HistoryMessage = { role: 'user' | 'assistant'; content: string };
 
@@ -129,6 +144,222 @@ const resolveChatUrl = (baseUrl: string): string => {
   return `${trimmed}/v1/chat/completions`;
 };
 
+type CharacterMatchRow = { id: string; name: string; aliases: string[] | null };
+type PlaceMatchRow = { id: string; name: string };
+
+type CharacterDetailRow = {
+  id: string;
+  name: string;
+  title: string | null;
+  faction: string | null;
+  description: string | null;
+  lore: string | null;
+  bio: string | null;
+  aliases: string[] | null;
+};
+
+type PlaceDetailRow = {
+  id: string;
+  name: string;
+  kind: string;
+  description: string | null;
+  lore_md: string | null;
+};
+
+type StoryListRow = { id: string; title: string; excerpt: string | null };
+
+const MAX_CONTEXT_PACK_CHARS = 2400;
+const MAX_CONTEXT_SOURCE_CHARS = 1200;
+const MAX_MATCHED_CHARACTERS = 4;
+const MAX_MATCHED_PLACES = 4;
+const MAX_RELATED_STORIES = 6;
+
+const compactText = (value: unknown): string =>
+  String(value ?? '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const clipText = (value: unknown, maxChars: number): string => {
+  const text = compactText(value);
+  if (text.length <= maxChars) return text;
+  return text.slice(0, Math.max(0, maxChars - 1)).trimEnd() + '…';
+};
+
+const normalizeForMatch = (value: string): string => value.toLowerCase();
+
+const scoreNeedlesInText = (needles: Array<string | null | undefined>, haystack: string): number => {
+  let best = 0;
+  for (const raw of needles) {
+    const needle = compactText(raw);
+    if (needle.length < 2) continue;
+    if (haystack.includes(normalizeForMatch(needle))) best = Math.max(best, needle.length);
+  }
+  return best;
+};
+
+const buildContextPack = async (rawUserText: string): Promise<string> => {
+  if (!supabaseAdmin) return '';
+
+  const haystack = normalizeForMatch(compactText(rawUserText));
+  if (haystack.length === 0) return '';
+
+  try {
+    const [{ data: characterCandidates, error: characterError }, { data: placeCandidates, error: placeError }] =
+      await Promise.all([
+        supabaseAdmin.from('characters').select('id,name,aliases').limit(500),
+        supabaseAdmin.from('places').select('id,name').limit(800),
+      ]);
+
+    if (characterError) throw characterError;
+    if (placeError) throw placeError;
+
+    const matchedCharacterIds = ((characterCandidates as CharacterMatchRow[]) ?? [])
+      .map((row) => ({
+        id: String(row.id),
+        score: scoreNeedlesInText([row.name, ...(row.aliases ?? [])], haystack),
+      }))
+      .filter((row) => row.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, MAX_MATCHED_CHARACTERS)
+      .map((row) => row.id);
+
+    const matchedPlaceIds = ((placeCandidates as PlaceMatchRow[]) ?? [])
+      .map((row) => ({
+        id: String(row.id),
+        score: scoreNeedlesInText([row.name], haystack),
+      }))
+      .filter((row) => row.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, MAX_MATCHED_PLACES)
+      .map((row) => row.id);
+
+    if (matchedCharacterIds.length === 0 && matchedPlaceIds.length === 0) return '';
+
+    const [characterDetailsRes, placeDetailsRes] = await Promise.all([
+      matchedCharacterIds.length > 0
+        ? supabaseAdmin
+            .from('characters')
+            .select('id,name,title,faction,description,lore,bio,aliases')
+            .in('id', matchedCharacterIds)
+        : Promise.resolve({ data: [] as unknown[], error: null as any }),
+      matchedPlaceIds.length > 0
+        ? supabaseAdmin
+            .from('places')
+            .select('id,name,kind,description,lore_md')
+            .in('id', matchedPlaceIds)
+        : Promise.resolve({ data: [] as unknown[], error: null as any }),
+    ]);
+
+    if (characterDetailsRes.error) throw characterDetailsRes.error;
+    if (placeDetailsRes.error) throw placeDetailsRes.error;
+
+    const characterDetails = ((characterDetailsRes.data as CharacterDetailRow[]) ?? []).sort(
+      (a, b) => matchedCharacterIds.indexOf(a.id) - matchedCharacterIds.indexOf(b.id)
+    );
+    const placeDetails = ((placeDetailsRes.data as PlaceDetailRow[]) ?? []).sort(
+      (a, b) => matchedPlaceIds.indexOf(a.id) - matchedPlaceIds.indexOf(b.id)
+    );
+
+    const storyIdSet = new Set<string>();
+
+    if (matchedCharacterIds.length > 0) {
+      const { data, error } = await supabaseAdmin
+        .from('story_characters')
+        .select('story_id')
+        .in('character_id', matchedCharacterIds)
+        .limit(200);
+      if (error) throw error;
+      for (const row of (data as Array<{ story_id: string }>) ?? []) {
+        if (row?.story_id) storyIdSet.add(String(row.story_id));
+      }
+    }
+
+    if (matchedPlaceIds.length > 0) {
+      const { data, error } = await supabaseAdmin
+        .from('story_places')
+        .select('story_id')
+        .in('place_id', matchedPlaceIds)
+        .limit(200);
+      if (error) throw error;
+      for (const row of (data as Array<{ story_id: string }>) ?? []) {
+        if (row?.story_id) storyIdSet.add(String(row.story_id));
+      }
+    }
+
+    const storyIds = Array.from(storyIdSet).slice(0, 50);
+    let storyRows: StoryListRow[] = [];
+    if (storyIds.length > 0) {
+      const { data, error } = await supabaseAdmin
+        .from('stories')
+        .select('id,title,excerpt')
+        .in('id', storyIds)
+        .order('created_at', { ascending: false })
+        .limit(MAX_RELATED_STORIES);
+      if (error) throw error;
+      storyRows = ((data as StoryListRow[]) ?? []).map((row) => ({
+        id: String((row as any).id),
+        title: String((row as any).title ?? ''),
+        excerpt: (row as any).excerpt ?? null,
+      }));
+    }
+
+    const lines: string[] = [];
+
+    if (characterDetails.length > 0) {
+      lines.push('【角色】');
+      for (const c of characterDetails) {
+        const meta: string[] = [];
+        const title = compactText(c.title);
+        if (title) meta.push(title);
+        const faction = compactText(c.faction);
+        if (faction) meta.push(faction);
+
+        lines.push(`- ${compactText(c.name)}${meta.length > 0 ? `（${meta.join(' · ')}）` : ''}`);
+
+        const aliases = (c.aliases ?? []).map(compactText).filter(Boolean);
+        if (aliases.length > 0) lines.push(`  别名：${clipText(aliases.join('、'), 120)}`);
+
+        const desc = clipText(c.description, 220);
+        if (desc) lines.push(`  简介：${desc}`);
+
+        const lore = clipText(c.lore, 600);
+        if (lore) lines.push(`  设定：${lore}`);
+
+        const bio = clipText(c.bio, 400);
+        if (bio) lines.push(`  Bio：${bio}`);
+      }
+    }
+
+    if (placeDetails.length > 0) {
+      if (lines.length > 0) lines.push('');
+      lines.push('【地点】');
+      for (const p of placeDetails) {
+        lines.push(`- ${compactText(p.name)}（${compactText(p.kind)}）`);
+
+        const desc = clipText(p.description, 220);
+        if (desc) lines.push(`  简介：${desc}`);
+
+        const lore = clipText(p.lore_md, 600);
+        if (lore) lines.push(`  设定：${lore}`);
+      }
+    }
+
+    if (storyRows.length > 0) {
+      if (lines.length > 0) lines.push('');
+      lines.push('【相关短篇（仅摘要）】');
+      for (const s of storyRows) {
+        const excerpt = clipText(s.excerpt, 220);
+        lines.push(`- ${clipText(s.title, 80)}：${excerpt || '（无摘要）'}`);
+      }
+    }
+
+    return clipText(lines.join('\n'), MAX_CONTEXT_PACK_CHARS);
+  } catch (error: any) {
+    console.error('[chat] context pack error', error?.message ?? 'unknown');
+    return '';
+  }
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.status(405).json({ text: '仅支持 POST 请求' });
@@ -153,18 +384,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     normalizedMessage = '请阅读附件并回答。';
   }
 
-  const systemPrompt = `
-你是「编年史守护者」，一位栖居在奇幻大陆地图中的古老智能。
-口吻睿智、略带史诗感，但保持友好与简洁。
-
-当前选中地点信息（如有）：${context ?? '无'}。
-
-回答要求：
-- 80 字以内，中文输出。
-- 若被问及地点/角色，结合已知信息进行沉浸式扩写，但不要胡编完全违背设定的事实。
-- 如果用户想继续探索，引导其查看地图或英雄群像。
-`.trim();
-
   let normalized = { images: [] as ChatAttachment[], texts: [] as ChatAttachment[], warnings: [] as string[] };
   try {
     normalized = normalizeAttachments(attachments);
@@ -181,6 +400,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   for (const att of normalized.texts) {
     textParts.push(`\n\n【附件：${att.filename || '未命名文件'}】\n${(att as any).text ?? ''}`);
   }
+
+  const safeContext = clipText(typeof context === 'string' ? context : '', MAX_CONTEXT_SOURCE_CHARS);
+  const contextPack = await buildContextPack(textParts.join('\n'));
+
+  const systemPrompt = `
+你是「编年史守护者」，一位栖居在奇幻大陆地图中的古老智能。
+口吻睿智、略带史诗感，但保持友好与简洁。
+
+当前选中地点信息（如有）：${safeContext || '无'}。
+
+${contextPack ? `可引用设定资料（来自数据库，可能不完整）：\n${contextPack}\n` : ''}
+
+回答要求：
+- 80 字以内，中文输出。
+- 若被问及地点/角色，结合已知信息进行沉浸式扩写，但不要胡编完全违背设定的事实。
+- 如果用户想继续探索，引导其查看地图或英雄群像。
+`.trim();
 
   const userContentParts: any[] = [{ type: 'text', text: textParts.join('') }];
   for (const att of normalized.images) {

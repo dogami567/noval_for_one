@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, Edit2, BookOpen, User, Sword } from 'lucide-react';
+import { X, Save, Edit2, BookOpen, User, Sword, ExternalLink } from 'lucide-react';
 import { Character } from '../types';
 
 interface CharacterSidebarProps {
@@ -62,6 +62,17 @@ const CharacterSidebar: React.FC<CharacterSidebarProps> = ({ character, onClose,
               >
                 <Edit2 size={16} />
               </button>
+            )}
+
+            {!isEditing && (
+              <a
+                href={`/character/${encodeURIComponent(character.slug)}`}
+                className="absolute top-4 right-16 px-3 py-2 bg-black/50 hover:bg-black/70 rounded-full text-white/90 transition-colors z-20 backdrop-blur-md border border-white/10 text-xs font-semibold uppercase tracking-widest inline-flex items-center gap-2"
+                title="查看详情"
+              >
+                <ExternalLink size={14} />
+                详情
+              </a>
             )}
 
             <div className="absolute bottom-0 left-0 w-full p-8 z-20">

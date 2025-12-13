@@ -1,14 +1,18 @@
 export type LocationStatus = 'locked' | 'unlocked';
 
-export interface Location {
+export type PlaceKind = 'continent' | 'country' | 'city' | 'poi';
+
+export interface Place {
   id: string;
+  parentId?: string;
+  kind: PlaceKind;
   name: string;
-  type: 'ruin' | 'city' | 'nature' | 'mystic';
-  x: number; // Percentage 0-100
-  y: number; // Percentage 0-100
+  slug: string;
   description: string;
-  lore: string;
-  imageUrl: string;
+  loreMd: string;
+  coverImageUrl: string;
+  mapX?: number; // Percentage 0-100
+  mapY?: number; // Percentage 0-100
   status: LocationStatus;
 }
 
@@ -21,15 +25,17 @@ export interface ChatMessage {
 
 export interface Character {
   id: string;
+  slug: string;
+  aliases?: string[];
   name: string;
   title: string;
   faction: string;
   description: string;
   imageUrl: string;
   lore: string; // Extended biography
-  stories: { title: string; excerpt: string }[]; // New field for "stories"
-  currentLocationId: string; // Drives map/champions filtering (V1)
-  homeLocationId?: string; // Optional narrative hook (V2+)
+  stories?: { title: string; excerpt: string }[]; // legacy (deprecated by 007 stories table)
+  currentPlaceId: string; // Drives map/champions filtering (V1)
+  homePlaceId?: string; // Optional narrative hook (V2+)
   discoveryStage: 'hidden' | 'rumor' | 'revealed'; // Character discovery state (V1)
   bio?: string;
   rpPrompt?: string;
@@ -42,6 +48,15 @@ export interface ChronicleEntry {
   date: string;
   summary: string;
   status: 'completed' | 'active' | 'pending';
+}
+
+export interface Story {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  contentMd: string;
+  coverImageUrl: string;
 }
 
 export type ViewType = 'map' | 'characters' | 'chronicles'; // Kept for navbar highlighting logic, though layout is scroll-based now

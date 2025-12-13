@@ -2,11 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bot, X, Send, Sparkles, Paperclip, FileText } from 'lucide-react';
 import { generateChronicleResponse } from '../services/geminiService';
-import { ChatMessage, Location } from '../types';
+import { ChatMessage, Place } from '../types';
 import { INITIAL_WELCOME_MESSAGE } from '../constants';
 
 interface ChatWidgetProps {
-  selectedLocation: Location | null;
+  selectedLocation: Place | null;
 }
 
 type AttachmentKind = 'image' | 'text';
@@ -174,7 +174,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ selectedLocation }) => {
     if (!trimmedInput && pendingAttachments.length === 0) return;
 
     const context = selectedLocation 
-      ? `Selected Location: ${selectedLocation.name} (${selectedLocation.type}). Description: ${selectedLocation.description}. Lore: ${selectedLocation.lore}` 
+      ? `Selected Place: ${selectedLocation.name} (${selectedLocation.kind}). Description: ${selectedLocation.description}. Lore: ${selectedLocation.loreMd}` 
       : '';
 
     const history = messages

@@ -1,48 +1,63 @@
-import { Location, Character, ChronicleEntry } from './types';
+import { Place, Character, ChronicleEntry } from './types';
 
-export const LOCATIONS: Location[] = [
+export const PLACES: Place[] = [
+  {
+    id: 'place_continent_1',
+    parentId: undefined,
+    kind: 'continent',
+    name: '艾瑟瑞亚',
+    slug: '艾瑟瑞亚',
+    description: '一片被古老魔法与钢铁意志撕扯的大陆。',
+    loreMd: '这里是 **艾瑟瑞亚**：传说与阴影交织的土地。',
+    coverImageUrl: 'https://picsum.photos/800/400?random=10',
+    status: 'unlocked',
+  },
   {
     id: 'loc_1',
     name: 'The Whispering Spire',
-    type: 'mystic',
-    x: 25,
-    y: 30,
+    kind: 'poi',
+    slug: 'The Whispering Spire',
+    mapX: 25,
+    mapY: 30,
     description: 'An ancient tower that pierces the clouds, vibrating with forgotten songs.',
-    lore: 'Legend says the Spire was not built, but grown from a single crystal seed by the Star-Architects. Travelers report hearing the voices of their ancestors when touching its obsidian walls.',
-    imageUrl: 'https://picsum.photos/400/300?random=1',
+    loreMd: 'Legend says the Spire was not built, but grown from a single crystal seed by the Star-Architects.\n\nTravelers report hearing the voices of their ancestors when touching its obsidian walls.',
+    coverImageUrl: 'https://picsum.photos/800/500?random=1',
     status: 'unlocked'
   },
   {
     id: 'loc_2',
     name: 'Ironclad Bastion',
-    type: 'city',
-    x: 65,
-    y: 55,
+    kind: 'city',
+    slug: 'Ironclad Bastion',
+    mapX: 65,
+    mapY: 55,
     description: 'The last stronghold of the crimson legion, powered by steam and runic magic.',
-    lore: 'Built atop a dormant volcano, the Bastion harnesses geothermal energy to power its massive forges. It represents the pinnacle of mortal engineering in an age of declining magic.',
-    imageUrl: 'https://picsum.photos/400/300?random=2',
+    loreMd: 'Built atop a dormant volcano, the Bastion harnesses geothermal energy to power its massive forges.\n\nIt represents the pinnacle of mortal engineering in an age of declining magic.',
+    coverImageUrl: 'https://picsum.photos/800/500?random=2',
     status: 'unlocked'
   },
   {
     id: 'loc_3',
     name: 'Sylvaneth Grove',
-    type: 'nature',
-    x: 80,
-    y: 20,
+    kind: 'poi',
+    slug: 'Sylvaneth Grove',
+    mapX: 80,
+    mapY: 20,
     description: 'A bioluminescent forest where time flows differently.',
-    lore: 'The trees here bleed silver sap, and the fireflies are said to be the souls of lost wanderers. It is forbidden to carry iron into the Grove.',
-    imageUrl: 'https://picsum.photos/400/300?random=3',
+    loreMd: 'The trees here bleed silver sap, and the fireflies are said to be the souls of lost wanderers.\n\nIt is forbidden to carry iron into the Grove.',
+    coverImageUrl: 'https://picsum.photos/800/500?random=3',
     status: 'locked'
   },
   {
     id: 'loc_4',
     name: 'Ruins of Aethelgard',
-    type: 'ruin',
-    x: 40,
-    y: 80,
+    kind: 'poi',
+    slug: 'Ruins of Aethelgard',
+    mapX: 40,
+    mapY: 80,
     description: 'Shattered remnants of a once-great civilization, now reclaimed by the sea.',
-    lore: 'Aethelgard fell in a single night during the Great Cataclysm. Now, only scavengers and brave historians dare to explore its waterlogged halls looking for artifacts.',
-    imageUrl: 'https://picsum.photos/400/300?random=4',
+    loreMd: 'Aethelgard fell in a single night during the Great Cataclysm.\n\nNow, only scavengers and brave historians dare to explore its waterlogged halls looking for artifacts.',
+    coverImageUrl: 'https://picsum.photos/800/500?random=4',
     status: 'locked'
   },
 ];
@@ -52,6 +67,7 @@ export const INITIAL_WELCOME_MESSAGE = "旅人，欢迎来到编年史的殿堂�
 export const CHARACTERS: Character[] = [
   {
     id: 'char_1',
+    slug: 'Mel, The Void Walker',
     name: 'Mel, The Void Walker',
     title: 'Glimmering Shadow',
     faction: 'The Whispering Spire',
@@ -62,11 +78,12 @@ export const CHARACTERS: Character[] = [
         { title: 'The First Step', excerpt: 'How Mel abandoned her family name to serve the Spire.' },
         { title: 'Echoes of Silence', excerpt: 'A confrontation with the silence of the Void.' }
     ],
-    currentLocationId: 'loc_1',
+    currentPlaceId: 'loc_1',
     discoveryStage: 'revealed',
   },
   {
     id: 'char_2',
+    slug: 'Viktor, The Herald',
     name: 'Viktor, The Herald',
     title: 'Arcane Pioneer',
     faction: 'Ironclad Bastion',
@@ -76,11 +93,12 @@ export const CHARACTERS: Character[] = [
     stories: [
         { title: 'Glorious Evolution', excerpt: 'The day the forges ran cold, and Viktor reignited them with his own spark.' }
     ],
-    currentLocationId: 'loc_2',
+    currentPlaceId: 'loc_2',
     discoveryStage: 'revealed',
   },
   {
     id: 'char_3',
+    slug: 'Ambessa',
     name: 'Ambessa',
     title: 'Matriarch of War',
     faction: 'Noxus Prime',
@@ -91,11 +109,12 @@ export const CHARACTERS: Character[] = [
         { title: 'Blood and Iron', excerpt: 'A lesson taught to her children on the battlefield.' },
         { title: 'The Wolfs Bargain', excerpt: 'A secret pact made in the depths of winter.' }
     ],
-    currentLocationId: 'loc_4',
+    currentPlaceId: 'loc_4',
     discoveryStage: 'rumor',
   },
   {
     id: 'char_4',
+    slug: 'Teemo',
     name: 'Teemo',
     title: 'Swift Scout',
     faction: 'Bandle City',
@@ -105,11 +124,12 @@ export const CHARACTERS: Character[] = [
     stories: [
         { title: 'The Mushroom War', excerpt: 'How one scout held back an entire battalion.' }
     ],
-    currentLocationId: 'loc_3',
+    currentPlaceId: 'loc_3',
     discoveryStage: 'rumor',
   },
   {
     id: 'char_5',
+    slug: 'Aurora',
     name: 'Aurora',
     title: 'Spirit Walker',
     faction: 'Freljord',
@@ -117,7 +137,7 @@ export const CHARACTERS: Character[] = [
     imageUrl: 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Aurora_0.jpg',
     lore: 'Aurora sees the world not as it is, but as it could be. The spirits guide her steps, allowing her to traverse great distances in the blink of an eye. She seeks to heal the rift between the material and the ethereal.',
     stories: [],
-    currentLocationId: 'loc_1',
+    currentPlaceId: 'loc_1',
     discoveryStage: 'revealed',
   }
 ];

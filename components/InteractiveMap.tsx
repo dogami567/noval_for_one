@@ -3,13 +3,13 @@ import { motion } from 'framer-motion';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { Minus, Plus, RotateCcw } from 'lucide-react';
 import MapMarker from './MapMarker';
-import type { Location } from '../types';
+import type { Place } from '../types';
 
 interface InteractiveMapProps {
-  locations: Location[];
+  locations: Place[];
   selectedLocationId: string | null;
   currentLocationId: string;
-  onSelectLocation: (location: Location) => void;
+  onSelectLocation: (location: Place) => void;
   onClearSelection: () => void;
 }
 

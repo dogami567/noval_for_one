@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Compass, ScrollText, Edit2, Save, Map, Lock } from 'lucide-react';
-import { Location } from '../types';
+import { Place } from '../types';
 
 interface SidebarProps {
-  location: Location | null;
+  location: Place | null;
   currentLocationId: string;
   onClose: () => void;
-  onUpdate: (location: Location) => void;
+  onUpdate: (location: Place) => void;
   onTravel: () => void;
-  onViewChampions: (location: Location) => void;
+  onViewChampions: (location: Place) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose, onUpdate, onTravel, onViewChampions }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState<Partial<Location>>({});
+  const [formData, setFormData] = useState<Partial<Place>>({});
   const isAdminMode = import.meta.env.VITE_ADMIN_MODE === 'true';
 
   // Reset editing state when location changes
@@ -28,7 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose,
   const handleSave = () => {
     if (!isAdminMode) return;
     if (location && formData) {
-      onUpdate({ ...location, ...formData } as Location);
+      onUpdate({ ...location, ...formData } as Place);
       setIsEditing(false);
     }
   };
@@ -65,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose,
           {/* Header Image */}
           <div className="relative h-56 w-full shrink-0 overflow-hidden border-b border-amber-500/40 group">
             <img 
-              src={location.imageUrl} 
+              src={location.coverImageUrl} 
               alt={location.name} 
               className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 ${isLocked ? 'grayscale' : ''}`}
             />
@@ -97,7 +97,7 @@ const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose,
               <div className="flex justify-between items-center mb-3">
                  <span className="text-amber-500 text-xs font-bold uppercase tracking-[0.25em] flex items-center gap-2">
                     <Compass size={12} />
-                    {location.type} 地点
+                    {location.kind} 地点
                  </span>
                  {isLocked && (
                     <span className="text-slate-400 text-xs uppercase tracking-widest flex items-center gap-1 bg-slate-800 px-2 py-1 rounded">
@@ -129,8 +129,8 @@ const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose,
                   <div>
                     <label className="block text-slate-400 text-xs uppercase tracking-wider mb-1">传说</label>
                     <textarea 
-                      value={formData.lore || ''}
-                      onChange={(e) => setFormData({...formData, lore: e.target.value})}
+                      value={formData.loreMd || ''}
+                      onChange={(e) => setFormData({...formData, loreMd: e.target.value})}
                       rows={5}
                       className="w-full bg-slate-800/50 border border-slate-600 rounded p-2 text-slate-300 text-sm focus:border-amber-500 focus:outline-none transition-colors resize-none"
                     />
@@ -162,7 +162,7 @@ const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose,
                     <p className="text-slate-400 text-sm leading-7 font-sans text-justify">
                       {isLocked
                         ? '此处的记录已被封存或湮没于时光。请探索附近地点以寻找线索。'
-                        : location.lore}
+                        : location.loreMd}
                     </p>
                   </div>
                 </>
@@ -172,6 +172,12 @@ const Sidebar: React.FC<SidebarProps> = ({ location, currentLocationId, onClose,
 
           {/* Footer Action */}
           <div className="p-6 border-t border-slate-800 bg-black/40 backdrop-blur-sm z-20">
+            <a
+              href={`/place/${encodeURIComponent(location.slug)}`}
+              className="group w-full mb-3 py-3 px-6 font-semibold rounded-lg uppercase tracking-[0.18em] text-xs flex items-center justify-center gap-3 bg-slate-800/70 hover:bg-slate-700 text-white border border-white/10 hover:border-white/20 transition-all"
+            >
+              查看设定详情
+            </a>
             <button
               type="button"
               onClick={() => onViewChampions(location)}

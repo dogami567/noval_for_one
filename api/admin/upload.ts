@@ -67,7 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  if (entity !== 'location' && entity !== 'character') {
+  if (entity !== 'location' && entity !== 'character' && entity !== 'place' && entity !== 'story') {
     res.status(400).json({ message: '不支持的实体类型' });
     return;
   }
@@ -78,8 +78,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const bucket = entity === 'location' ? 'locations' : 'characters';
-  const fileName = entity === 'location' ? `cover.${ext}` : `portrait.${ext}`;
+  const bucket =
+    entity === 'location'
+      ? 'locations'
+      : entity === 'character'
+        ? 'characters'
+        : entity === 'place'
+          ? 'places'
+          : 'stories';
+
+  const fileName =
+    entity === 'character' ? `portrait.${ext}` : `cover.${ext}`;
   const path = `${id}/${fileName}`;
 
   try {

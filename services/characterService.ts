@@ -3,6 +3,8 @@ import { Character } from '../types';
 
 interface CharacterRow {
   id: string;
+  slug: string;
+  aliases: string[] | null;
   name: string;
   title: string | null;
   faction: string | null;
@@ -10,8 +12,8 @@ interface CharacterRow {
   lore: string | null;
   image_url: string | null;
   stories: unknown;
-  current_location_id: string;
-  home_location_id: string | null;
+  current_place_id: string;
+  home_place_id: string | null;
   discovery_stage: string;
   bio: string | null;
   rp_prompt: string | null;
@@ -27,6 +29,8 @@ const normalizeStories = (stories: unknown): Character['stories'] => {
 
 const mapCharacter = (row: CharacterRow): Character => ({
   id: row.id,
+  slug: row.slug,
+  aliases: row.aliases ?? undefined,
   name: row.name,
   title: row.title ?? '',
   faction: row.faction ?? '',
@@ -34,8 +38,8 @@ const mapCharacter = (row: CharacterRow): Character => ({
   lore: row.lore ?? '',
   imageUrl: row.image_url ?? '',
   stories: normalizeStories(row.stories),
-  currentLocationId: row.current_location_id,
-  homeLocationId: row.home_location_id ?? undefined,
+  currentPlaceId: row.current_place_id,
+  homePlaceId: row.home_place_id ?? undefined,
   discoveryStage: row.discovery_stage as Character['discoveryStage'],
   bio: row.bio ?? undefined,
   rpPrompt: row.rp_prompt ?? undefined,
@@ -52,14 +56,24 @@ export const listCharacters = async (): Promise<Character[]> => {
   return ((data as CharacterRow[]) ?? []).map(mapCharacter);
 };
 
-export const listCharactersByLocation = async (locationId: string): Promise<Character[]> => {
+export const listCharactersByPlace = async (placeId: string): Promise<Character[]> => {
   const { data, error } = await supabase
     .from('characters')
     .select('*')
-    .eq('current_location_id', locationId)
+    .eq('current_place_id', placeId)
     .order('created_at', { ascending: true });
 
   if (error) throw error;
   return ((data as CharacterRow[]) ?? []).map(mapCharacter);
 };
 
+export const getCharacterBySlug = async (slug: string): Promise<Character | null> => {
+  const { data, error } = await supabase
+    .from('characters')
+    .select('*')
+    .eq('slug', slug)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? mapCharacter(data as CharacterRow) : null;
+};

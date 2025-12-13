@@ -1,24 +1,30 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Save, Trash2, LogOut, Shield } from 'lucide-react';
-import { Location, Character, ChronicleEntry } from '../types';
-import { listLocations } from '../services/locationService';
+import { Place, Character, ChronicleEntry, Story } from '../types';
+import { listPlaces } from '../services/placeService';
 import { listCharacters } from '../services/characterService';
 import { listTimelineEvents } from '../services/chronicleService';
+import { listStories } from '../services/storyService';
 import {
-  adminListLocations,
-  adminCreateLocation,
-  adminUpdateLocation,
-  adminDeleteLocation,
+  adminListPlaces,
+  adminCreatePlace,
+  adminUpdatePlace,
+  adminDeletePlace,
   adminCreateCharacter,
   adminUpdateCharacter,
   adminDeleteCharacter,
+  adminListStories,
+  adminGetStoryDetail,
+  adminCreateStory,
+  adminUpdateStory,
+  adminDeleteStory,
   adminCreateTimelineEvent,
   adminUpdateTimelineEvent,
   adminDeleteTimelineEvent,
   adminUploadImage,
 } from '../services/adminApi';
 
-type TabKey = 'locations' | 'characters' | 'chronicles';
+type TabKey = 'places' | 'characters' | 'stories' | 'chronicles';
 
 const AdminPage: React.FC = () => {
   const [tokenInput, setTokenInput] = useState('');
@@ -29,38 +35,47 @@ const AdminPage: React.FC = () => {
   const [isVerified, setIsVerified] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<TabKey>('locations');
-  const [locations, setLocations] = useState<Location[]>([]);
+  const [activeTab, setActiveTab] = useState<TabKey>('places');
+  const [places, setPlaces] = useState<Place[]>([]);
   const [characters, setCharacters] = useState<Character[]>([]);
+  const [stories, setStories] = useState<Story[]>([]);
   const [chronicles, setChronicles] = useState<ChronicleEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
-  const [locationForm, setLocationForm] = useState<Partial<Location>>({});
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+  const [placeForm, setPlaceForm] = useState<Partial<Place>>({ kind: 'poi', status: 'unlocked' });
 
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
   const [characterForm, setCharacterForm] = useState<Partial<Character>>({});
-  const [storiesJson, setStoriesJson] = useState('[]');
+  const [aliasesText, setAliasesText] = useState('');
   const [attributesJson, setAttributesJson] = useState('{}');
+
+  const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
+  const [storyForm, setStoryForm] = useState<Partial<Story>>({});
+  const [storyCharacterIds, setStoryCharacterIds] = useState<string[]>([]);
+  const [storyPlaceIds, setStoryPlaceIds] = useState<string[]>([]);
 
   const [selectedChronicleId, setSelectedChronicleId] = useState<string | null>(null);
   const [chronicleForm, setChronicleForm] = useState<Partial<ChronicleEntry>>({});
 
-  const [locationImageFile, setLocationImageFile] = useState<File | null>(null);
+  const [placeImageFile, setPlaceImageFile] = useState<File | null>(null);
   const [characterImageFile, setCharacterImageFile] = useState<File | null>(null);
+  const [storyImageFile, setStoryImageFile] = useState<File | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const reloadData = async () => {
     setIsLoading(true);
     try {
-      const [dbLocations, dbCharacters, dbChronicles] = await Promise.all([
-        listLocations(),
+      const [dbPlaces, dbCharacters, dbStories, dbChronicles] = await Promise.all([
+        listPlaces(),
         listCharacters(),
+        listStories(),
         listTimelineEvents(),
       ]);
-      setLocations(dbLocations);
+      setPlaces(dbPlaces);
       setCharacters(dbCharacters);
+      setStories(dbStories);
       setChronicles(dbChronicles);
     } finally {
       setIsLoading(false);
@@ -69,13 +84,13 @@ const AdminPage: React.FC = () => {
 
   const verifyToken = async () => {
     try {
-      await adminListLocations();
+      await adminListPlaces();
       setIsVerified(true);
       setAuthError(null);
       await reloadData();
     } catch {
       setIsVerified(false);
-      setAuthError('管理员口令无效');
+      setAuthError('管理员口令无效（或 places 未完成迁移）');
       if (typeof window !== 'undefined') {
         window.localStorage.removeItem('adminEditToken');
       }
@@ -107,46 +122,72 @@ const AdminPage: React.FC = () => {
     setAuthError(null);
   };
 
-  const sortedLocations = useMemo(
-    () => [...locations].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN')),
-    [locations]
-  );
+  const sortedPlaces = useMemo(() => {
+    const order: Record<Place['kind'], number> = {
+      continent: 1,
+      country: 2,
+      city: 3,
+      poi: 4,
+    };
+    return [...places].sort((a, b) => {
+      const ak = order[a.kind] ?? 99;
+      const bk = order[b.kind] ?? 99;
+      if (ak !== bk) return ak - bk;
+      return a.name.localeCompare(b.name, 'zh-CN');
+    });
+  }, [places]);
   const sortedCharacters = useMemo(
     () => [...characters].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN')),
     [characters]
+  );
+  const sortedStories = useMemo(
+    () => [...stories].sort((a, b) => a.title.localeCompare(b.title, 'zh-CN')),
+    [stories]
   );
   const sortedChronicles = useMemo(
     () => [...chronicles].sort((a, b) => a.title.localeCompare(b.title, 'zh-CN')),
     [chronicles]
   );
 
-  const toLocationRow = (form: Partial<Location>) => ({
+  const normalizeSlug = (value: string | undefined, fallback: string): string => {
+    const trimmed = String(value ?? '').trim();
+    if (trimmed.length > 0) return trimmed;
+    return String(fallback ?? '').trim();
+  };
+
+  const parseAliases = (raw: string): string[] =>
+    raw
+      .split(/[\n,]/g)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+  const toPlaceRow = (form: Partial<Place>) => ({
+    parent_id: form.parentId ?? null,
+    kind: form.kind ?? 'poi',
     name: form.name ?? '',
-    type: form.type ?? 'mystic',
-    x: Number(form.x ?? 0),
-    y: Number(form.y ?? 0),
+    slug: normalizeSlug(form.slug, form.name ?? ''),
     description: form.description ?? '',
-    lore: form.lore ?? '',
-    image_url: form.imageUrl ?? '',
+    lore_md: form.loreMd ?? '',
+    cover_image_url: form.coverImageUrl ?? '',
+    map_x: form.mapX === undefined ? null : Number(form.mapX),
+    map_y: form.mapY === undefined ? null : Number(form.mapY),
     status: form.status ?? 'unlocked',
   });
 
   const toCharacterRow = (form: Partial<Character>) => {
-    let stories: unknown = [];
     let attributes: unknown = null;
-    try {
-      stories = JSON.parse(storiesJson);
-    } catch {
-      stories = [];
-    }
     try {
       attributes = JSON.parse(attributesJson);
     } catch {
       attributes = null;
     }
 
+    const aliases = parseAliases(aliasesText);
+
     return {
       name: form.name ?? '',
+      slug: normalizeSlug(form.slug, form.name ?? ''),
+      aliases: aliases.length > 0 ? aliases : null,
       title: form.title ?? '',
       faction: form.faction ?? '',
       description: form.description ?? '',
@@ -154,13 +195,22 @@ const AdminPage: React.FC = () => {
       bio: form.bio ?? '',
       rp_prompt: form.rpPrompt ?? '',
       image_url: form.imageUrl ?? '',
-      stories,
-      current_location_id: form.currentLocationId ?? locations[0]?.id ?? null,
-      home_location_id: form.homeLocationId ?? null,
+      current_place_id: form.currentPlaceId ?? places[0]?.id ?? null,
+      home_place_id: form.homePlaceId ?? null,
       discovery_stage: form.discoveryStage ?? 'revealed',
       attributes,
     };
   };
+
+  const toStoryRow = (form: Partial<Story>) => ({
+    title: form.title ?? '',
+    slug: normalizeSlug(form.slug, form.title ?? ''),
+    excerpt: form.excerpt ?? '',
+    content_md: form.contentMd ?? '',
+    cover_image_url: form.coverImageUrl ?? '',
+    character_ids: storyCharacterIds,
+    place_ids: storyPlaceIds,
+  });
 
   const toTimelineRow = (form: Partial<ChronicleEntry>) => ({
     title: form.title ?? '',
@@ -187,16 +237,16 @@ const AdminPage: React.FC = () => {
       reader.readAsDataURL(file);
     });
 
-  const handleUploadLocationImage = async () => {
-    if (!selectedLocationId) {
+  const handleUploadPlaceImage = async () => {
+    if (!selectedPlaceId) {
       setStatusMessage('请先保存以生成 ID');
       return;
     }
-    if (!locationImageFile) {
+    if (!placeImageFile) {
       setStatusMessage('请先选择图片');
       return;
     }
-    if (locationImageFile.size > MAX_IMAGE_BYTES) {
+    if (placeImageFile.size > MAX_IMAGE_BYTES) {
       setStatusMessage('图片过大，请压缩后再上传');
       return;
     }
@@ -204,19 +254,19 @@ const AdminPage: React.FC = () => {
     setIsUploadingImage(true);
     setStatusMessage(null);
     try {
-      const base64 = await readFileAsBase64(locationImageFile);
+      const base64 = await readFileAsBase64(placeImageFile);
       const publicUrl = await adminUploadImage({
-        entity: 'location',
-        id: selectedLocationId,
-        filename: locationImageFile.name,
-        contentType: locationImageFile.type,
+        entity: 'place',
+        id: selectedPlaceId,
+        filename: placeImageFile.name,
+        contentType: placeImageFile.type,
         base64,
       });
 
-      const nextForm = { ...locationForm, imageUrl: publicUrl };
-      setLocationForm(nextForm);
-      await handleSaveLocation(nextForm);
-      setLocationImageFile(null);
+      const nextForm = { ...placeForm, coverImageUrl: publicUrl };
+      setPlaceForm(nextForm);
+      await handleSavePlace(nextForm);
+      setPlaceImageFile(null);
     } catch (err: any) {
       setStatusMessage(`上传失败：${err?.message ?? '未知错误'}`);
     } finally {
@@ -261,15 +311,52 @@ const AdminPage: React.FC = () => {
     }
   };
 
-  const handleSaveLocation = async (override?: Partial<Location>) => {
+  const handleUploadStoryImage = async () => {
+    if (!selectedStoryId) {
+      setStatusMessage('请先保存以生成 ID');
+      return;
+    }
+    if (!storyImageFile) {
+      setStatusMessage('请先选择图片');
+      return;
+    }
+    if (storyImageFile.size > MAX_IMAGE_BYTES) {
+      setStatusMessage('图片过大，请压缩后再上传');
+      return;
+    }
+
+    setIsUploadingImage(true);
     setStatusMessage(null);
     try {
-      const payload = toLocationRow(override ?? locationForm);
-      if (selectedLocationId) {
-        await adminUpdateLocation(selectedLocationId, payload);
+      const base64 = await readFileAsBase64(storyImageFile);
+      const publicUrl = await adminUploadImage({
+        entity: 'story',
+        id: selectedStoryId,
+        filename: storyImageFile.name,
+        contentType: storyImageFile.type,
+        base64,
+      });
+
+      const nextForm = { ...storyForm, coverImageUrl: publicUrl };
+      setStoryForm(nextForm);
+      await handleSaveStory(nextForm);
+      setStoryImageFile(null);
+    } catch (err: any) {
+      setStatusMessage(`上传失败：${err?.message ?? '未知错误'}`);
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleSavePlace = async (override?: Partial<Place>) => {
+    setStatusMessage(null);
+    try {
+      const payload = toPlaceRow(override ?? placeForm);
+      if (selectedPlaceId) {
+        await adminUpdatePlace(selectedPlaceId, payload);
       } else {
-        const created: any = await adminCreateLocation(payload);
-        setSelectedLocationId(created?.id ? String(created.id) : null);
+        const created: any = await adminCreatePlace(payload);
+        setSelectedPlaceId(created?.id ? String(created.id) : null);
       }
       await reloadData();
       setStatusMessage('已保存');
@@ -278,13 +365,13 @@ const AdminPage: React.FC = () => {
     }
   };
 
-  const handleDeleteLocation = async () => {
-    if (!selectedLocationId) return;
+  const handleDeletePlace = async () => {
+    if (!selectedPlaceId) return;
     setStatusMessage(null);
     try {
-      await adminDeleteLocation(selectedLocationId);
-      setSelectedLocationId(null);
-      setLocationForm({});
+      await adminDeletePlace(selectedPlaceId);
+      setSelectedPlaceId(null);
+      setPlaceForm({ kind: 'poi', status: 'unlocked' });
       await reloadData();
       setStatusMessage('已删除');
     } catch (err: any) {
@@ -316,12 +403,68 @@ const AdminPage: React.FC = () => {
       await adminDeleteCharacter(selectedCharacterId);
       setSelectedCharacterId(null);
       setCharacterForm({});
-      setStoriesJson('[]');
+      setAliasesText('');
       setAttributesJson('{}');
       await reloadData();
       setStatusMessage('已删除');
     } catch (err: any) {
       setStatusMessage(`删除失败：${err?.message ?? '未知错误'}`);
+    }
+  };
+
+  const handleSaveStory = async (override?: Partial<Story>) => {
+    setStatusMessage(null);
+    try {
+      const payload = toStoryRow(override ?? storyForm);
+      if (selectedStoryId) {
+        await adminUpdateStory(selectedStoryId, payload);
+      } else {
+        const created: any = await adminCreateStory(payload);
+        setSelectedStoryId(created?.id ? String(created.id) : null);
+      }
+      await reloadData();
+      setStatusMessage('已保存');
+    } catch (err: any) {
+      setStatusMessage(`保存失败：${err?.message ?? '未知错误'}`);
+    }
+  };
+
+  const handleDeleteStory = async () => {
+    if (!selectedStoryId) return;
+    setStatusMessage(null);
+    try {
+      await adminDeleteStory(selectedStoryId);
+      setSelectedStoryId(null);
+      setStoryForm({});
+      setStoryCharacterIds([]);
+      setStoryPlaceIds([]);
+      await reloadData();
+      setStatusMessage('已删除');
+    } catch (err: any) {
+      setStatusMessage(`删除失败：${err?.message ?? '未知错误'}`);
+    }
+  };
+
+  const handleSelectStory = async (id: string) => {
+    setStatusMessage(null);
+    setSelectedStoryId(id);
+    try {
+      const detail = await adminGetStoryDetail(id);
+      const storyRow: any = detail?.story ?? null;
+      setStoryForm({
+        id,
+        title: storyRow?.title ?? '',
+        slug: storyRow?.slug ?? '',
+        excerpt: storyRow?.excerpt ?? '',
+        contentMd: storyRow?.content_md ?? '',
+        coverImageUrl: storyRow?.cover_image_url ?? '',
+      });
+      setStoryCharacterIds(detail?.character_ids ?? []);
+      setStoryPlaceIds(detail?.place_ids ?? []);
+    } catch (err: any) {
+      setStatusMessage(`加载短篇关联失败：${err?.message ?? '未知错误'}`);
+      const fallback = sortedStories.find((s) => s.id === id);
+      if (fallback) setStoryForm(fallback);
     }
   };
 
@@ -401,15 +544,15 @@ const AdminPage: React.FC = () => {
       </header>
 
       <main className="px-4 sm:px-10 py-6">
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6 flex-wrap">
           <button
             type="button"
-            onClick={() => setActiveTab('locations')}
+            onClick={() => setActiveTab('places')}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
-              activeTab === 'locations' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-300'
+              activeTab === 'places' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-300'
             }`}
           >
-            地点
+            地点/地区
           </button>
           <button
             type="button"
@@ -418,7 +561,16 @@ const AdminPage: React.FC = () => {
               activeTab === 'characters' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-300'
             }`}
           >
-            角色
+            英雄
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('stories')}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+              activeTab === 'stories' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-300'
+            }`}
+          >
+            短篇
           </button>
           <button
             type="button"
@@ -443,31 +595,36 @@ const AdminPage: React.FC = () => {
           <div className="bg-slate-900/50 border border-white/10 rounded-2xl p-4 h-[70vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-3">
               <div className="text-sm text-slate-300">
-                {activeTab === 'locations' && '地点列表'}
-                {activeTab === 'characters' && '角色列表'}
+                {activeTab === 'places' && '地点/地区列表'}
+                {activeTab === 'characters' && '英雄列表'}
+                {activeTab === 'stories' && '短篇列表'}
                 {activeTab === 'chronicles' && '事件列表'}
               </div>
               <button
                 type="button"
                 onClick={() => {
                   setStatusMessage(null);
-                  if (activeTab === 'locations') {
-                    setSelectedLocationId(null);
-                    setLocationForm({
+                  if (activeTab === 'places') {
+                    setSelectedPlaceId(null);
+                    setPlaceForm({
                       name: '',
-                      type: 'mystic',
-                      x: 50,
-                      y: 50,
+                      slug: '',
+                      kind: 'poi',
+                      parentId: undefined,
                       description: '',
-                      lore: '',
-                      imageUrl: '',
+                      loreMd: '',
+                      coverImageUrl: '',
+                      mapX: undefined,
+                      mapY: undefined,
                       status: 'unlocked',
                     });
+                    setPlaceImageFile(null);
                   }
                   if (activeTab === 'characters') {
                     setSelectedCharacterId(null);
                     setCharacterForm({
                       name: '',
+                      slug: '',
                       title: '',
                       faction: '',
                       description: '',
@@ -475,12 +632,26 @@ const AdminPage: React.FC = () => {
                       bio: '',
                       rpPrompt: '',
                       imageUrl: '',
-                      currentLocationId: locations[0]?.id,
-                      homeLocationId: undefined,
+                      currentPlaceId: places[0]?.id,
+                      homePlaceId: undefined,
                       discoveryStage: 'revealed',
                     });
-                    setStoriesJson('[]');
+                    setAliasesText('');
                     setAttributesJson('{}');
+                    setCharacterImageFile(null);
+                  }
+                  if (activeTab === 'stories') {
+                    setSelectedStoryId(null);
+                    setStoryForm({
+                      title: '',
+                      slug: '',
+                      excerpt: '',
+                      contentMd: '',
+                      coverImageUrl: '',
+                    });
+                    setStoryCharacterIds([]);
+                    setStoryPlaceIds([]);
+                    setStoryImageFile(null);
                   }
                   if (activeTab === 'chronicles') {
                     setSelectedChronicleId(null);
@@ -499,26 +670,26 @@ const AdminPage: React.FC = () => {
               </button>
             </div>
 
-            {activeTab === 'locations' &&
-              sortedLocations.map((loc) => (
+            {activeTab === 'places' &&
+              sortedPlaces.map((loc) => (
                 <button
                   key={loc.id}
                   type="button"
                   onClick={() => {
-                    setSelectedLocationId(loc.id);
-                    setLocationForm(loc);
+                    setSelectedPlaceId(loc.id);
+                    setPlaceForm(loc);
                     setStatusMessage(null);
                   }}
                   className={`w-full text-left px-3 py-2 rounded-lg mb-1 transition-colors ${
-                    selectedLocationId === loc.id
+                    selectedPlaceId === loc.id
                       ? 'bg-amber-500/20 text-amber-200'
                       : 'hover:bg-slate-800 text-slate-200'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    {loc.imageUrl ? (
+                    {loc.coverImageUrl ? (
                       <img
-                        src={loc.imageUrl}
+                        src={loc.coverImageUrl}
                         alt={loc.name}
                         className="w-9 h-9 rounded-full object-cover bg-slate-800 shrink-0"
                       />
@@ -530,7 +701,7 @@ const AdminPage: React.FC = () => {
                     <div className="min-w-0">
                       <div className="font-medium truncate">{loc.name}</div>
                       <div className="text-xs text-slate-400 truncate">
-                        {loc.type}
+                        {loc.kind}
                         {loc.status ? ` · ${loc.status}` : ''}
                       </div>
                     </div>
@@ -546,7 +717,7 @@ const AdminPage: React.FC = () => {
                   onClick={() => {
                     setSelectedCharacterId(char.id);
                     setCharacterForm(char);
-                    setStoriesJson(JSON.stringify(char.stories ?? [], null, 2));
+                    setAliasesText((char.aliases ?? []).join('\n'));
                     setAttributesJson(JSON.stringify(char.attributes ?? {}, null, 2));
                     setStatusMessage(null);
                   }}
@@ -578,6 +749,38 @@ const AdminPage: React.FC = () => {
                 </button>
               ))}
 
+            {activeTab === 'stories' &&
+              sortedStories.map((story) => (
+                <button
+                  key={story.id}
+                  type="button"
+                  onClick={() => handleSelectStory(story.id)}
+                  className={`w-full text-left px-3 py-2 rounded-lg mb-1 transition-colors ${
+                    selectedStoryId === story.id
+                      ? 'bg-amber-500/20 text-amber-200'
+                      : 'hover:bg-slate-800 text-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    {story.coverImageUrl ? (
+                      <img
+                        src={story.coverImageUrl}
+                        alt={story.title}
+                        className="w-9 h-9 rounded-full object-cover bg-slate-800 shrink-0"
+                      />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-sm font-semibold text-slate-300 shrink-0">
+                        {(story.title || '?').slice(0, 1)}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">{story.title}</div>
+                      <div className="text-xs text-slate-400 truncate">{story.excerpt}</div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+
             {activeTab === 'chronicles' &&
               sortedChronicles.map((entry) => (
                 <button
@@ -600,13 +803,13 @@ const AdminPage: React.FC = () => {
           </div>
 
           <div className="bg-slate-900/50 border border-white/10 rounded-2xl p-6 h-[70vh] overflow-y-auto">
-            {activeTab === 'locations' && (
+            {activeTab === 'places' && (
               <div className="space-y-4">
                 <div className="rounded-xl border border-white/10 bg-slate-900/40 p-3">
-                  {locationForm.imageUrl ? (
+                  {placeForm.coverImageUrl ? (
                     <img
-                      src={locationForm.imageUrl}
-                      alt={locationForm.name ?? '当前图片'}
+                      src={placeForm.coverImageUrl}
+                      alt={placeForm.name ?? '当前图片'}
                       className="w-full max-h-52 object-contain rounded-lg bg-slate-950/60"
                     />
                   ) : (
@@ -615,113 +818,68 @@ const AdminPage: React.FC = () => {
                     </div>
                   )}
                 </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs text-slate-400 mb-1">名称</label>
                     <input
-                      value={locationForm.name ?? ''}
-                      onChange={(e) => setLocationForm({ ...locationForm, name: e.target.value })}
+                      value={placeForm.name ?? ''}
+                      onChange={(e) => setPlaceForm({ ...placeForm, name: e.target.value })}
                       className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
                     />
                   </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Slug（URL）</label>
+                    <input
+                      value={placeForm.slug ?? ''}
+                      onChange={(e) => setPlaceForm({ ...placeForm, slug: e.target.value })}
+                      className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
+                      placeholder="默认=名称"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs text-slate-400 mb-1">类型</label>
                     <select
-                      value={locationForm.type ?? 'mystic'}
+                      value={placeForm.kind ?? 'poi'}
                       onChange={(e) =>
-                        setLocationForm({ ...locationForm, type: e.target.value as Location['type'] })
+                        setPlaceForm({ ...placeForm, kind: e.target.value as Place['kind'] })
                       }
                       className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
                     >
-                      <option value="mystic">mystic</option>
-                      <option value="nature">nature</option>
+                      <option value="continent">continent</option>
+                      <option value="country">country</option>
                       <option value="city">city</option>
-                      <option value="ruin">ruin</option>
+                      <option value="poi">poi</option>
                     </select>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-slate-400 mb-1">X（0-100）</label>
-                    <input
-                      type="number"
-                      value={locationForm.x ?? 0}
-                      onChange={(e) => setLocationForm({ ...locationForm, x: Number(e.target.value) })}
+                    <label className="block text-xs text-slate-400 mb-1">父级</label>
+                    <select
+                      value={placeForm.parentId ?? ''}
+                      onChange={(e) =>
+                        setPlaceForm({ ...placeForm, parentId: e.target.value || undefined })
+                      }
                       className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-400 mb-1">Y（0-100）</label>
-                    <input
-                      type="number"
-                      value={locationForm.y ?? 0}
-                      onChange={(e) => setLocationForm({ ...locationForm, y: Number(e.target.value) })}
-                      className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs text-slate-400 mb-1">简短描述</label>
-                  <textarea
-                    rows={3}
-                    value={locationForm.description ?? ''}
-                    onChange={(e) => setLocationForm({ ...locationForm, description: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs text-slate-400 mb-1">传说</label>
-                  <textarea
-                    rows={6}
-                    value={locationForm.lore ?? ''}
-                    onChange={(e) => setLocationForm({ ...locationForm, lore: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs text-slate-400 mb-1">图片 URL</label>
-                    <input
-                      value={locationForm.imageUrl ?? ''}
-                      onChange={(e) => setLocationForm({ ...locationForm, imageUrl: e.target.value })}
-                      className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
-                    />
-                    <div className="mt-2 flex items-center gap-2">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) =>
-                          setLocationImageFile(e.target.files?.[0] ?? null)
-                        }
-                        className="text-xs text-slate-200 file:mr-2 file:px-3 file:py-1 file:rounded file:border-0 file:bg-slate-700 file:text-white hover:file:bg-slate-600"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleUploadLocationImage}
-                        disabled={isUploadingImage || !selectedLocationId}
-                        className={`px-3 py-2 text-xs rounded font-semibold transition-colors ${
-                          isUploadingImage
-                            ? 'bg-slate-700 text-slate-300 cursor-wait'
-                            : 'bg-amber-600 hover:bg-amber-500 text-white'
-                        } ${!selectedLocationId ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      >
-                        {isUploadingImage ? '上传中...' : '上传并替换'}
-                      </button>
-                    </div>
-                    {!selectedLocationId && (
-                      <div className="mt-1 text-xs text-slate-500">请先保存以生成 ID</div>
-                    )}
+                    >
+                      <option value="">无</option>
+                      {sortedPlaces
+                        .filter((p) => p.id !== selectedPlaceId)
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}（{p.kind}）
+                          </option>
+                        ))}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-xs text-slate-400 mb-1">状态</label>
                     <select
-                      value={locationForm.status ?? 'unlocked'}
+                      value={placeForm.status ?? 'unlocked'}
                       onChange={(e) =>
-                        setLocationForm({ ...locationForm, status: e.target.value as Location['status'] })
+                        setPlaceForm({ ...placeForm, status: e.target.value as Place['status'] })
                       }
                       className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
                     >
@@ -731,19 +889,106 @@ const AdminPage: React.FC = () => {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">地图 X（0-100，可选）</label>
+                    <input
+                      type="number"
+                      value={placeForm.mapX ?? ''}
+                      onChange={(e) =>
+                        setPlaceForm({
+                          ...placeForm,
+                          mapX: e.target.value === '' ? undefined : Number(e.target.value),
+                        })
+                      }
+                      className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">地图 Y（0-100，可选）</label>
+                    <input
+                      type="number"
+                      value={placeForm.mapY ?? ''}
+                      onChange={(e) =>
+                        setPlaceForm({
+                          ...placeForm,
+                          mapY: e.target.value === '' ? undefined : Number(e.target.value),
+                        })
+                      }
+                      className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">短介绍</label>
+                  <textarea
+                    rows={3}
+                    value={placeForm.description ?? ''}
+                    onChange={(e) =>
+                      setPlaceForm({ ...placeForm, description: e.target.value })
+                    }
+                    className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">设定正文（Markdown）</label>
+                  <textarea
+                    rows={10}
+                    value={placeForm.loreMd ?? ''}
+                    onChange={(e) => setPlaceForm({ ...placeForm, loreMd: e.target.value })}
+                    className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white font-mono text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">封面 URL</label>
+                  <input
+                    value={placeForm.coverImageUrl ?? ''}
+                    onChange={(e) =>
+                      setPlaceForm({ ...placeForm, coverImageUrl: e.target.value })
+                    }
+                    className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
+                  />
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setPlaceImageFile(e.target.files?.[0] ?? null)}
+                      className="text-xs text-slate-200 file:mr-2 file:px-3 file:py-1 file:rounded file:border-0 file:bg-slate-700 file:text-white hover:file:bg-slate-600"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleUploadPlaceImage}
+                      disabled={isUploadingImage || !selectedPlaceId}
+                      className={`px-3 py-2 text-xs rounded font-semibold transition-colors ${
+                        isUploadingImage
+                          ? 'bg-slate-700 text-slate-300 cursor-wait'
+                          : 'bg-amber-600 hover:bg-amber-500 text-white'
+                      } ${!selectedPlaceId ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {isUploadingImage ? '上传中...' : '上传并替换'}
+                    </button>
+                  </div>
+                  {!selectedPlaceId && (
+                    <div className="mt-1 text-xs text-slate-500">请先保存以生成 ID</div>
+                  )}
+                </div>
+
                 <div className="flex gap-2 pt-2">
                   <button
                     type="button"
-                    onClick={handleSaveLocation}
+                    onClick={() => handleSavePlace()}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-600 rounded text-white font-semibold"
                   >
                     <Save size={16} />
                     保存
                   </button>
-                  {selectedLocationId && (
+                  {selectedPlaceId && (
                     <button
                       type="button"
-                      onClick={handleDeleteLocation}
+                      onClick={handleDeletePlace}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-rose-700 hover:bg-rose-600 rounded text-white font-semibold"
                     >
                       <Trash2 size={16} />
@@ -788,6 +1033,30 @@ const AdminPage: React.FC = () => {
                         setCharacterForm({ ...characterForm, title: e.target.value })
                       }
                       className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Slug（URL）</label>
+                    <input
+                      value={characterForm.slug ?? ''}
+                      onChange={(e) =>
+                        setCharacterForm({ ...characterForm, slug: e.target.value })
+                      }
+                      className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
+                      placeholder="默认=名称"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">别名（可选）</label>
+                    <textarea
+                      rows={3}
+                      value={aliasesText}
+                      onChange={(e) => setAliasesText(e.target.value)}
+                      className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-xs"
+                      placeholder="换行或逗号分隔，用于聊天命中"
                     />
                   </div>
                 </div>
@@ -889,16 +1158,6 @@ const AdminPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs text-slate-400 mb-1">Stories（JSON 数组）</label>
-                  <textarea
-                    rows={5}
-                    value={storiesJson}
-                    onChange={(e) => setStoriesJson(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white font-mono text-xs"
-                  />
-                </div>
-
-                <div>
                   <label className="block text-xs text-slate-400 mb-1">Attributes（JSON 对象）</label>
                   <textarea
                     rows={5}
@@ -912,18 +1171,18 @@ const AdminPage: React.FC = () => {
                   <div>
                     <label className="block text-xs text-slate-400 mb-1">当前地点</label>
                     <select
-                      value={characterForm.currentLocationId ?? locations[0]?.id ?? ''}
+                      value={characterForm.currentPlaceId ?? places[0]?.id ?? ''}
                       onChange={(e) =>
                         setCharacterForm({
                           ...characterForm,
-                          currentLocationId: e.target.value,
+                          currentPlaceId: e.target.value,
                         })
                       }
                       className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
                     >
-                      {sortedLocations.map((loc) => (
-                        <option key={loc.id} value={loc.id}>
-                          {loc.name}
+                      {sortedPlaces.map((place) => (
+                        <option key={place.id} value={place.id}>
+                          {place.name}（{place.kind}）
                         </option>
                       ))}
                     </select>
@@ -931,19 +1190,19 @@ const AdminPage: React.FC = () => {
                   <div>
                     <label className="block text-xs text-slate-400 mb-1">家乡地点（可选）</label>
                     <select
-                      value={characterForm.homeLocationId ?? ''}
+                      value={characterForm.homePlaceId ?? ''}
                       onChange={(e) =>
                         setCharacterForm({
                           ...characterForm,
-                          homeLocationId: e.target.value || undefined,
+                          homePlaceId: e.target.value || undefined,
                         })
                       }
                       className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
                     >
                       <option value="">无</option>
-                      {sortedLocations.map((loc) => (
-                        <option key={loc.id} value={loc.id}>
-                          {loc.name}
+                      {sortedPlaces.map((place) => (
+                        <option key={place.id} value={place.id}>
+                          {place.name}（{place.kind}）
                         </option>
                       ))}
                     </select>
@@ -981,6 +1240,185 @@ const AdminPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleDeleteCharacter}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-rose-700 hover:bg-rose-600 rounded text-white font-semibold"
+                    >
+                      <Trash2 size={16} />
+                      删除
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'stories' && (
+              <div className="space-y-4">
+                <div className="rounded-xl border border-white/10 bg-slate-900/40 p-3">
+                  {storyForm.coverImageUrl ? (
+                    <img
+                      src={storyForm.coverImageUrl}
+                      alt={storyForm.title ?? '当前图片'}
+                      className="w-full max-h-52 object-contain rounded-lg bg-slate-950/60"
+                    />
+                  ) : (
+                    <div className="w-full h-40 rounded-lg bg-slate-800/60 flex items-center justify-center text-sm text-slate-400">
+                      暂无图片
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">标题</label>
+                    <input
+                      value={storyForm.title ?? ''}
+                      onChange={(e) => setStoryForm({ ...storyForm, title: e.target.value })}
+                      className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Slug（URL）</label>
+                    <input
+                      value={storyForm.slug ?? ''}
+                      onChange={(e) => setStoryForm({ ...storyForm, slug: e.target.value })}
+                      className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
+                      placeholder="默认=标题"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">摘要</label>
+                  <textarea
+                    rows={4}
+                    value={storyForm.excerpt ?? ''}
+                    onChange={(e) => setStoryForm({ ...storyForm, excerpt: e.target.value })}
+                    className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">正文（Markdown）</label>
+                  <textarea
+                    rows={12}
+                    value={storyForm.contentMd ?? ''}
+                    onChange={(e) => setStoryForm({ ...storyForm, contentMd: e.target.value })}
+                    className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white font-mono text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">封面 URL</label>
+                  <input
+                    value={storyForm.coverImageUrl ?? ''}
+                    onChange={(e) =>
+                      setStoryForm({ ...storyForm, coverImageUrl: e.target.value })
+                    }
+                    className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
+                  />
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setStoryImageFile(e.target.files?.[0] ?? null)}
+                      className="text-xs text-slate-200 file:mr-2 file:px-3 file:py-1 file:rounded file:border-0 file:bg-slate-700 file:text-white hover:file:bg-slate-600"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleUploadStoryImage}
+                      disabled={isUploadingImage || !selectedStoryId}
+                      className={`px-3 py-2 text-xs rounded font-semibold transition-colors ${
+                        isUploadingImage
+                          ? 'bg-slate-700 text-slate-300 cursor-wait'
+                          : 'bg-amber-600 hover:bg-amber-500 text-white'
+                      } ${!selectedStoryId ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {isUploadingImage ? '上传中...' : '上传并替换'}
+                    </button>
+                  </div>
+                  {!selectedStoryId && (
+                    <div className="mt-1 text-xs text-slate-500">请先保存以生成 ID</div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-2">关联角色（多选）</label>
+                    <div className="max-h-56 overflow-y-auto rounded border border-slate-700 bg-slate-900/40 p-2 space-y-1">
+                      {sortedCharacters.map((char) => {
+                        const checked = storyCharacterIds.includes(char.id);
+                        return (
+                          <label
+                            key={char.id}
+                            className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-800/60 cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() =>
+                                setStoryCharacterIds((prev) =>
+                                  prev.includes(char.id)
+                                    ? prev.filter((id) => id !== char.id)
+                                    : [...prev, char.id]
+                                )
+                              }
+                            />
+                            <span className="text-sm truncate">{char.name}</span>
+                          </label>
+                        );
+                      })}
+                      {sortedCharacters.length === 0 && (
+                        <div className="text-xs text-slate-500 px-2 py-2">暂无英雄</div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-2">关联地点（多选）</label>
+                    <div className="max-h-56 overflow-y-auto rounded border border-slate-700 bg-slate-900/40 p-2 space-y-1">
+                      {sortedPlaces.map((place) => {
+                        const checked = storyPlaceIds.includes(place.id);
+                        return (
+                          <label
+                            key={place.id}
+                            className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-800/60 cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() =>
+                                setStoryPlaceIds((prev) =>
+                                  prev.includes(place.id)
+                                    ? prev.filter((id) => id !== place.id)
+                                    : [...prev, place.id]
+                                )
+                              }
+                            />
+                            <span className="text-sm truncate">
+                              {place.name}（{place.kind}）
+                            </span>
+                          </label>
+                        );
+                      })}
+                      {sortedPlaces.length === 0 && (
+                        <div className="text-xs text-slate-500 px-2 py-2">暂无地点/地区</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleSaveStory}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-600 rounded text-white font-semibold"
+                  >
+                    <Save size={16} />
+                    保存
+                  </button>
+                  {selectedStoryId && (
+                    <button
+                      type="button"
+                      onClick={handleDeleteStory}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-rose-700 hover:bg-rose-600 rounded text-white font-semibold"
                     >
                       <Trash2 size={16} />

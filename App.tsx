@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Github, Twitter } from 'lucide-react';
 import Sidebar from './components/Sidebar';
@@ -8,18 +8,20 @@ import CharacterGridSection from './components/CharacterGridSection';
 import CharacterSidebar from './components/CharacterSidebar';
 import ChroniclesView from './components/ChroniclesView';
 import InteractiveMap from './components/InteractiveMap';
-import { LOCATIONS, CHARACTERS, CHRONICLES } from './constants';
-import { Location, ViewType, Character, ChronicleEntry } from './types';
-import { listLocations } from './services/locationService';
+import { PLACES, CHARACTERS, CHRONICLES } from './constants';
+import { Place, ViewType, Character, ChronicleEntry } from './types';
+import { listPlacesForMap } from './services/placeService';
 import { listCharacters } from './services/characterService';
 import { listTimelineEvents } from './services/chronicleService';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('map');
-  const [locations, setLocations] = useState<Location[]>(LOCATIONS);
+  const [locations, setLocations] = useState<Place[]>(() =>
+    PLACES.filter((p) => p.mapX !== undefined && p.mapY !== undefined)
+  );
   const [characters, setCharacters] = useState<Character[]>(CHARACTERS);
   const [chronicleEntries, setChronicleEntries] = useState<ChronicleEntry[]>(CHRONICLES);
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<Place | null>(null);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [currentLocationId, setCurrentLocationId] = useState<string>('loc_1');
   const [activeLocationId, setActiveLocationId] = useState<string | null>('loc_1');
@@ -28,11 +30,12 @@ function App() {
 
   useEffect(() => {
     let cancelled = false;
+    const fallbackMapPlaces = PLACES.filter((p) => p.mapX !== undefined && p.mapY !== undefined);
 
     const loadFromSupabase = async () => {
       try {
         const [dbLocations, dbCharacters, dbChronicles] = await Promise.all([
-          listLocations(),
+          listPlacesForMap(),
           listCharacters(),
           listTimelineEvents(),
         ]);
@@ -42,7 +45,7 @@ function App() {
         const hasDbData =
           dbLocations.length > 0 && dbCharacters.length > 0 && dbChronicles.length > 0;
 
-        const nextLocations = hasDbData ? dbLocations : LOCATIONS;
+        const nextLocations = hasDbData ? dbLocations : fallbackMapPlaces;
         const nextCharacters = hasDbData ? dbCharacters : CHARACTERS;
         const nextChronicles = hasDbData ? dbChronicles : CHRONICLES;
 
@@ -59,10 +62,10 @@ function App() {
       } catch (error) {
         console.warn('[supabase] Failed to load, falling back to constants', error);
         if (cancelled) return;
-        setLocations(LOCATIONS);
+        setLocations(fallbackMapPlaces);
         setCharacters(CHARACTERS);
         setChronicleEntries(CHRONICLES);
-        const fallbackId = LOCATIONS[0]?.id ?? 'loc_1';
+        const fallbackId = fallbackMapPlaces[0]?.id ?? 'loc_1';
         setCurrentLocationId(fallbackId);
         setActiveLocationId(fallbackId);
       } finally {
@@ -93,11 +96,11 @@ function App() {
     }
   };
 
-  const handleLocationClick = (location: Location) => {
+  const handleLocationClick = (location: Place) => {
     setSelectedLocation(location);
   };
 
-  const handleUpdateLocation = (updatedLocation: Location) => {
+  const handleUpdateLocation = (updatedLocation: Place) => {
     const newLocations = locations.map((loc) =>
       loc.id === updatedLocation.id ? updatedLocation : loc
     );
@@ -124,7 +127,7 @@ function App() {
     }
   };
 
-  const handleViewChampionsForLocation = (location: Location) => {
+  const handleViewChampionsForLocation = (location: Place) => {
     setActiveLocationId(location.id);
     setCurrentView('characters');
     characterSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -136,12 +139,13 @@ function App() {
 
   const isActiveLocationLocked = activeLocation?.status === 'locked';
 
-  const filteredCharacters =
-    activeLocationId && !isActiveLocationLocked
-      ? characters.filter((c) => c.currentLocationId === activeLocationId)
-      : activeLocationId
-        ? []
-        : characters.filter((c) => c.discoveryStage !== 'hidden');
+  const filteredCharacters = useMemo(() => {
+    if (!activeLocationId) {
+      return characters.filter((c) => c.discoveryStage !== 'hidden');
+    }
+    if (isActiveLocationLocked) return [];
+    return characters.filter((c) => c.currentPlaceId === activeLocationId);
+  }, [activeLocationId, characters, isActiveLocationLocked]);
 
   return (
     <div className="relative w-full min-h-screen bg-slate-950 text-slate-100 selection:bg-cyan-500/30 font-sans">

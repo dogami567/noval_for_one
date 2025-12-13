@@ -1,5 +1,5 @@
 import React from 'react';
-import { Globe, BookOpen, Users } from 'lucide-react';
+import { Globe, BookOpen, Users, Library } from 'lucide-react';
 import { ViewType } from '../types';
 
 interface NavbarProps {
@@ -35,6 +35,14 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
             </button>
           );
         })}
+        <button
+          onClick={() => (window.location.href = '/lore')}
+          className="flex items-center gap-2 text-sm font-medium transition-all duration-300 relative group text-slate-400 hover:text-slate-200"
+          title="设定集"
+        >
+          <Library size={18} />
+          <span className="fantasy-font tracking-wide">设定集</span>
+        </button>
       </div>
     </div>
   );

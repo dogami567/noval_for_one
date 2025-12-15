@@ -3,8 +3,13 @@ import { initSupabaseAdmin } from '../_lib/supabaseAdmin.js';
 
 const adminTokenSecret = process.env.ADMIN_EDIT_TOKEN;
 
-const { client: supabaseAdmin, missing: supabaseMissing, runtime: supabaseRuntime, envSource: supabaseEnvSource } =
-  initSupabaseAdmin();
+const {
+  client: supabaseAdmin,
+  missing: supabaseMissing,
+  runtime: supabaseRuntime,
+  envSource: supabaseEnvSource,
+  initError: supabaseInitError,
+} = initSupabaseAdmin();
 
 const isAdminRequest = (req: VercelRequest): boolean => {
   const token = req.headers['x-admin-token'];
@@ -83,10 +88,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (!supabaseAdmin) {
     res.status(500).json({
-      message: 'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY',
+      message: supabaseInitError ? 'Failed to init Supabase client' : 'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY',
       missing: supabaseMissing,
       envSource: supabaseEnvSource,
       runtime: supabaseRuntime,
+      initError: supabaseInitError,
     });
     return;
   }

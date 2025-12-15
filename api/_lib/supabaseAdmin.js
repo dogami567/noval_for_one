@@ -37,17 +37,22 @@ export const initSupabaseAdmin = () => {
   };
 
   if (missing.SUPABASE_URL || missing.SUPABASE_SERVICE_ROLE_KEY) {
-    return { client: null, missing, envSource, runtime };
+    return { client: null, missing, envSource, runtime, initError: null };
   }
 
-  const client = createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  });
+  try {
+    const client = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
 
-  return { client, missing, envSource, runtime };
+    return { client, missing, envSource, runtime, initError: null };
+  } catch (error) {
+    const name = error && typeof error === 'object' && 'name' in error ? String(error.name) : 'Error';
+    const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : String(error);
+    return { client: null, missing, envSource, runtime, initError: { name, message: message.slice(0, 200) } };
+  }
 };
-

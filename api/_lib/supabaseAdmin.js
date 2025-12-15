@@ -1,19 +1,12 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-
-type SupabaseAdminInit = {
-  client: SupabaseClient | null;
-  missing: { SUPABASE_URL: boolean; SUPABASE_SERVICE_ROLE_KEY: boolean };
-  envSource: { url: string | null; key: string | null };
-  runtime: { vercelEnv: string | null; vercelUrl: string | null; vercelGitCommitSha: string | null };
-};
+import { createClient } from '@supabase/supabase-js';
 
 const resolveEnv = () => {
   const supabaseUrlRaw = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL ?? '';
   const serviceRoleKeyRaw =
     process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_KEY ?? '';
 
-  const supabaseUrl = supabaseUrlRaw.trim();
-  const serviceRoleKey = serviceRoleKeyRaw.trim();
+  const supabaseUrl = String(supabaseUrlRaw).trim();
+  const serviceRoleKey = String(serviceRoleKeyRaw).trim();
 
   const missing = {
     SUPABASE_URL: supabaseUrl.length === 0,
@@ -34,7 +27,7 @@ const resolveEnv = () => {
   return { supabaseUrl, serviceRoleKey, missing, envSource };
 };
 
-export const initSupabaseAdmin = (): SupabaseAdminInit => {
+export const initSupabaseAdmin = () => {
   const { supabaseUrl, serviceRoleKey, missing, envSource } = resolveEnv();
 
   const runtime = {

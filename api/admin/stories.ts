@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { initSupabaseAdmin } from '../_lib/supabaseAdmin';
+import { initSupabaseAdmin } from '../_lib/supabaseAdmin.js';
 
 const adminTokenSecret = process.env.ADMIN_EDIT_TOKEN;
 

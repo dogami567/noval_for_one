@@ -130,7 +130,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data } = supabaseAdmin.storage.from(bucket).getPublicUrl(path);
     res.status(200).json({ publicUrl: data.publicUrl });
   } catch (error: any) {
-    console.error('[admin/upload] failed', error?.message ?? error);
-    res.status(500).json({ message: '图片上传失败，请稍后再试' });
+    const name =
+      error && typeof error === 'object' && 'name' in error ? String(error.name) : 'Error';
+    const message =
+      error && typeof error === 'object' && 'message' in error ? String(error.message) : String(error ?? 'Unknown');
+    const statusCode =
+      error && typeof error === 'object' && 'statusCode' in error && typeof error.statusCode === 'number'
+        ? error.statusCode
+        : null;
+
+    console.error('[admin/upload] failed', { name, statusCode, message });
+    res.status(500).json({
+      message: `图片上传失败：${message}`.slice(0, 220),
+      error: { name, statusCode, message: message.slice(0, 220) },
+    });
   }
 }

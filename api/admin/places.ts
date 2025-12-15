@@ -1,20 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
+import { initSupabaseAdmin } from '../_lib/supabaseAdmin';
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const adminTokenSecret = process.env.ADMIN_EDIT_TOKEN;
 
-const supabaseAdmin =
-  supabaseUrl && serviceRoleKey
-    ? createClient(supabaseUrl, serviceRoleKey, {
-        auth: {
-          persistSession: false,
-          autoRefreshToken: false,
-          detectSessionInUrl: false,
-        },
-      })
-    : null;
+const { client: supabaseAdmin, missing: supabaseMissing, runtime: supabaseRuntime, envSource: supabaseEnvSource } =
+  initSupabaseAdmin();
 
 const isAdminRequest = (req: VercelRequest): boolean => {
   const token = req.headers['x-admin-token'];
@@ -44,7 +34,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (!supabaseAdmin) {
-    res.status(500).json({ message: 'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY' });
+    res.status(500).json({
+      message: 'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY',
+      missing: supabaseMissing,
+      envSource: supabaseEnvSource,
+      runtime: supabaseRuntime,
+    });
     return;
   }
 
@@ -113,4 +108,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(500).json({ message: error?.message ?? 'Unknown error' });
   }
 }
-
